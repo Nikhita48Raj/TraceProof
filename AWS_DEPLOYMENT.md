@@ -1,99 +1,227 @@
-# TraceProof AWS deployment
+# TraceProof AWS Deployment Guide
 
-TraceProof uses AWS SAM because this prototype consists of a small set of Lambda functions and managed AWS resources. The AWS path processes only the repository's synthetic sample registry; it never calls DynamoDB `DeleteItem`, S3 `DeleteObject`, or another cloud deletion API. Local FastAPI remains available for development.
+TraceProof uses **AWS SAM (Serverless Application Model)** to deploy five managed AWS services configured for least privilege and synthetic research safety.
 
-## Architecture and request flow
+> [!CAUTION]
+> **STRICT SAFETY POLICY:**
+> The repository code and local SAM artifacts are deployment-ready. However, **do not run `sam deploy` without explicit user authorization.** TraceProof processes only synthetic sample registrations and never calls destructive cloud APIs such as DynamoDB `DeleteItem` or S3 `DeleteObject`.
 
-The React application sends requests to API Gateway HTTP API. The API Lambda validates a registered synthetic resource, stores a `Pending` request in DynamoDB, and enqueues its ID in SQS. The worker Lambda moves the request to `Processing`, runs the shared dependency-aware simulation on an in-memory copy, writes a JSON verification report to private S3, then records `Verified` or `Incomplete` and report metadata in DynamoDB. Worker processing errors are retried by SQS; after the configured receive limit, SQS moves the message to the DLQ and the request is marked `Failed` where possible. Duplicate deliveries skip terminal requests, and conditional status updates prevent completed results being overwritten.
+---
 
-The resource table is seeded idempotently from `backend/deletion_engine.py`. Every AWS report is labelled as simulation output. Report downloads go through an API endpoint that issues a five-minute presigned S3 redirect; AWS credentials are never sent to the browser.
+## 1. Managed AWS Services Architecture
 
-Resources provisioned: API Gateway HTTP API, API and worker Lambdas, on-demand DynamoDB resource and request tables, encrypted SQS queue and DLQ, encrypted private S3 report bucket, and CloudWatch Lambda log groups with 14-day retention. The SQS event source is limited to two concurrent worker invocations. Lambda invocation/error/duration metrics are available through the standard CloudWatch Lambda namespace.
+| Service Family | Specific Resources | Architectural Role in TraceProof |
+|---|---|---|
+| **1. Amazon API Gateway** | `TraceProofHttpApi` (HTTP API) | Ingests all frontend HTTP requests (`GET`, `POST`, `OPTIONS`), enforces CORS policy restricted to `FrontendOrigin`, routes requests directly to `ApiFunction`. |
+| **2. AWS Lambda** | `ApiFunction`<br>`WorkerFunction` | **ApiFunction:** Synchronous request router, Pydantic/JSON validation, DynamoDB reads/writes, SQS enqueueing, S3 presigned URL generation, experiment runner.<br>**WorkerFunction:** Asynchronous SQS consumer, dependency graph traversal, deletion verification simulation, S3 report storage, DLQ redrive handling. |
+| **3. Amazon DynamoDB** | `ResourceTable`<br>`RequestTable`<br>`ExperimentTable` | Three on-demand tables:<br>• `ResourceTable`: Registered cloud resources and dependency metadata (`depends_on`).<br>• `RequestTable`: Deletion request status tracking (`Pending`, `Processing`, `Verified`, `Incomplete`, `Failed`).<br>• `ExperimentTable`: Persisted experiment results with 7-day TTL (`ttl` attribute). |
+| **4. Amazon SQS** | `DeletionQueue`<br>`DeletionDeadLetterQueue` | Asynchronous decoupled message processing with SSE-SQS encryption:<br>• `DeletionQueue`: 300s visibility timeout, redrive policy configured with `maxReceiveCount` (default: 3).<br>• `DeletionDeadLetterQueue`: Retains messages after max retries for audit and troubleshooting (14-day retention). |
+| **5. Amazon S3** | `ReportBucket` | Private AES-256 encrypted bucket with Block Public Access enabled:<br>• `reports/{request_id}.json`: Auditable deletion verification reports (served via 5-min presigned URLs).<br>• `experiments/{experiment_id}/trial_records.json`: Raw Monte Carlo trial datasets.<br>• Automatic 90-day lifecycle expiration policy. |
 
-## Prerequisites
+---
 
-- AWS CLI configured for the intended account and region, preferably through IAM Identity Center/SSO or another short-lived role session.
-- AWS SAM CLI and Python 3.12. Docker is optional for this code because the included Lambda dependency is pure Python; use SAM's container build if your local platform requires it.
-- Permissions to create/update CloudFormation stacks, API Gateway HTTP APIs, Lambda functions and roles, DynamoDB tables, SQS queues/event source mappings, S3 buckets, and CloudWatch log groups. The deploying principal also needs `iam:PassRole` for SAM-created Lambda execution roles. Follow your organization's deployment policy and use a dedicated prototype account where possible.
-- A deployed frontend origin, or `http://localhost:5173` for local frontend testing. Configure the exact origin with no path or trailing slash.
+## 2. Request Lifecycle & Asynchronous Processing
 
-No AWS access keys or credentials belong in this repository or in Vite environment variables.
+```
+[React Browser App]
+       │
+       ▼ (POST /deletion-requests)
+[API Gateway HTTP API]
+       │
+       ▼
+[ApiFunction Lambda] ──► Validates resource & writes "Pending" to DynamoDB RequestTable
+       │
+       ▼ Enqueues {request_id}
+[Amazon SQS DeletionQueue]
+       │
+       ▼ (BatchSize: 1, MaxConcurrency: 2)
+[WorkerFunction Lambda]
+       ├── Sets status = "Processing" in RequestTable
+       ├── Traverses registered dependency graph (cycle-safe BFS)
+       ├── Executes simulated deletion on root and all dependent resources
+       ├── Writes JSON verification report to S3 (`reports/<request_id>.json`)
+       └── Sets terminal status in RequestTable ("Verified" or "Incomplete")
+       │
+       ▼ (If retries exceed MaxReceiveCount)
+[SQS DeletionDeadLetterQueue] (Sets status = "Failed")
+```
 
-## Build and deploy manually
+When the browser requests `/deletion-requests/{request_id}/report`, `ApiFunction` generates a temporary 5-minute presigned S3 GET URL and returns an HTTP 302 redirect.
 
-From the repository root:
+---
+
+## 3. Prerequisites
+
+- **AWS CLI v2** configured with valid credentials (`aws configure` or AWS IAM Identity Center SSO).
+- **AWS SAM CLI** (v1.110+).
+- **Python 3.12** and **Node.js 18+**.
+- **IAM Deployment Permissions:**
+  - `cloudformation:*` (scoped to stack deployment)
+  - `apigateway:*` (HTTP APIs)
+  - `lambda:*` (functions, versions, event source mappings)
+  - `dynamodb:*` (tables with on-demand billing and TTL)
+  - `sqs:*` (standard queues, redrive policies)
+  - `s3:*` (bucket creation, lifecycle configuration, encryption)
+  - `logs:*` (log groups with 14-day retention)
+  - `iam:PassRole`, `iam:CreateRole`, `iam:AttachRolePolicy` (scoped to SAM-generated Lambda execution roles)
+- **Frontend Origin:** The exact origin where Vite or your static web host runs (e.g., `http://localhost:5173` or `https://your-frontend.example.com`).
+
+---
+
+## 4. SAM Build Instructions
+
+Run from the repository root:
 
 ```powershell
+# Step 1: Validate SAM template with linter
 sam validate --lint
+
+# Step 2: Build containerless arm64 artifacts
 sam build
+```
+
+The SAM build processes `backend/requirements.txt`, bundles pure-Python dependencies into `.aws-sam/build/`, and generates CloudFormation template artifacts.
+
+---
+
+## 5. Deployment Instructions (Requires Explicit Approval)
+
+When ready to deploy to your AWS account:
+
+```powershell
 sam deploy --guided
 ```
 
-During guided deployment, choose the AWS region and a stack name. Supply the exact frontend origin as the `FrontendOrigin` parameter, for example `https://your-frontend.example` (replace with your real origin). The receive limit defaults to 3 and can be set with `MaxReceiveCount` from 2 to 5. Review the generated change set and IAM capabilities before accepting deployment. Deployment is intentionally not run by this project workflow.
+### Guided Prompts:
+- **Stack Name:** `traceproof-research` (or your preferred name)
+- **AWS Region:** `ap-south-1` (or your preferred region, e.g., `us-east-1`)
+- **Parameter FrontendOrigin:** `http://localhost:5173` (or your production frontend URL)
+- **Parameter MaxReceiveCount:** `3` (retries before moving to DLQ: 2 to 5)
+- **Confirm changes before deploy:** `Y`
+- **Allow SAM CLI IAM role creation:** `Y`
+- **Disable rollback:** `N`
+- **Save arguments to configuration file (samconfig.toml):** `Y`
 
-After deployment, copy the `ApiBaseUrl` stack output. The API is public and unauthenticated in this research prototype; a public production deployment needs an appropriate authentication and authorization strategy before use.
+After deployment succeeds, SAM outputs the API base URL:
+```
+Outputs:
+--------------------------------------------------------------------------------------
+Key                 ApiBaseUrl
+Description         API Gateway HTTP API base URL
+Value               https://<api-id>.execute-api.<region>.amazonaws.com
+--------------------------------------------------------------------------------------
+```
 
-## Configure the frontend
+---
+
+## 6. Frontend Environment Configuration
 
 Copy `frontend/.env.example` to `frontend/.env.local` and set:
 
 ```dotenv
+# AWS Mode
 VITE_API_BASE_URL=https://<api-id>.execute-api.<region>.amazonaws.com
 ```
 
-Use the actual `ApiBaseUrl` output; do not include an endpoint path. Restart Vite after changing the environment. The checked-in default points to local FastAPI:
-
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m uvicorn main:app --reload
-```
-
-In a second terminal, run the frontend:
-
+Restart the Vite development server:
 ```powershell
 cd frontend
 npm run dev
 ```
 
-## Test the deployed workflow
+The frontend Settings tab will now display `AWS Cloud Serverless (AWS MODE)` with an operational status check.
 
-1. Open the frontend and confirm the resource selector lists IDs/names returned by the API.
-2. Submit a deletion request for `student_001`. The UI should show `Pending`, then poll until it displays `Verified` and the Requests/Reports pages show its JSON report link.
-3. Submit another request with simulated failure enabled. The worker should finish as `Incomplete` and its report should show a remaining synthetic target.
-4. Open the report link. It redirects to a private S3 object through a short-lived presigned URL.
-5. Check `/deletion-requests` and `/experiments/compare`; optionally submit the experiment configuration to `/experiments/run`.
+---
 
-Test only synthetic IDs. No production storage target is implemented by the worker.
+## 7. Verification Steps
 
-## Logs and failed jobs
+1. **Health Check:**
+   ```powershell
+   Invoke-RestMethod -Uri https://<api-id>.execute-api.<region>.amazonaws.com/health
+   # Returns: {"name": "TraceProof API", "status": "running", "mode": "synthetic-aws", "service": "TraceProof API"}
+   ```
+2. **List Registered Resources:**
+   ```powershell
+   Invoke-RestMethod -Uri https://<api-id>.execute-api.<region>.amazonaws.com/resources
+   # Auto-seeds DynamoDB ResourceTable and returns resources array
+   ```
+3. **Submit Simulated Deletion:**
+   ```powershell
+   $body = '{"resource_id": "student_001", "simulate_failure": false}'
+   $req = Invoke-RestMethod -Method Post -Uri https://<api-id>.execute-api.<region>.amazonaws.com/deletion-requests -ContentType 'application/json' -Body $body
+   $req.request_id
+   # Returns HTTP 202 Accepted with status: "Pending"
+   ```
+4. **Poll Status:**
+   ```powershell
+   Invoke-RestMethod -Uri "https://<api-id>.execute-api.<region>.amazonaws.com/deletion-requests/$($req.request_id)"
+   # Updates to status: "Verified" with targets_checked: 3
+   ```
+5. **Fetch Presigned Report:**
+   ```powershell
+   Invoke-WebRequest -Uri "https://<api-id>.execute-api.<region>.amazonaws.com/deletion-requests/$($req.request_id)/report" -MaximumRedirection 0
+   # Returns HTTP 302 redirect with Location pointing to presigned S3 URL
+   ```
+6. **Run Experiment & Download Exports:**
+   ```powershell
+   $exp = Invoke-RestMethod -Method Post -Uri https://<api-id>.execute-api.<region>.amazonaws.com/experiments/run -ContentType 'application/json' -Body '{"num_resources":12,"trials":5,"random_seed":42}'
+   Invoke-WebRequest -Uri "https://<api-id>.execute-api.<region>.amazonaws.com/experiments/$($exp.experiment_id)/aggregates.csv" -OutFile "aws-aggregates.csv"
+   ```
 
-Lambda logs are in CloudWatch Logs groups `/aws/lambda/<stack>-ApiFunction-...` and `/aws/lambda/<stack>-WorkerFunction-...`; use the names shown in the Lambda console if SAM's generated names differ. Log retention is 14 days. Lambda invocation, duration, throttling, and error metrics are available in CloudWatch under `AWS/Lambda`.
+---
 
-Inspect the SQS DLQ's ApproximateNumberOfMessagesVisible metric or view its messages in the SQS console. Do not purge the queue until messages have been reviewed. A request whose worker exhausts retries is marked `Failed` when possible, with the message retained in the DLQ for diagnosis.
+## 8. CloudWatch Monitoring & Troubleshooting
 
-## Security limits
+- **Lambda Log Groups (14-Day Retention):**
+  - `/aws/lambda/<stack>-ApiFunction-...`
+  - `/aws/lambda/<stack>-WorkerFunction-...`
+- **Inspecting Failed Jobs in DLQ:**
+  ```powershell
+  aws sqs get-queue-attributes --queue-url <dlq-url> --attribute-names ApproximateNumberOfMessages
+  ```
+- **Reviewing DLQ Messages:**
+  View messages in the AWS SQS Console under `DeletionDeadLetterQueue` > `Send and receive messages` > `Poll for messages`.
 
-- The HTTP API has no authorizer and the Lambda endpoints are publicly callable. CORS is restricted to the configured browser origin, but CORS is not authentication; add an appropriate auth mechanism before public production use.
-- IAM roles are scoped to the prototype tables, queue, and `reports/` S3 prefix. Worker permissions do not include cloud deletion operations.
-- S3 public access is blocked and reports use AES256 server-side encryption. Reports expire after 90 days. DynamoDB tables use AWS's default encryption at rest with an AWS-owned key; no customer-managed KMS key is provisioned.
-- Synthetic results demonstrate behavior in a controlled graph, not physical erasure from AWS storage or every system that may hold a copy.
+---
 
-## Costs and teardown
+## 9. Security & Least Privilege Audit
 
-This stack is small but is not guaranteed to be free. Potential charges include API Gateway requests, Lambda invocations and CloudWatch logs, DynamoDB on-demand reads/writes and stored data, SQS requests, S3 storage and requests, and the SAM deployment artifact bucket. Check current costs in AWS Billing and Cost Management, Cost Explorer, and the Free Tier page for the selected account/region; use AWS Budgets for alerts. The report bucket lifecycle expires reports after 90 days, but CloudWatch log retention and any SAM artifact bucket should also be reviewed.
+- **CORS:** Restricted to `FrontendOrigin`. Note: CORS is not authentication. The prototype HTTP API is unauthenticated for research evaluation.
+- **IAM Policies:**
+  - `ApiFunction`:
+    - `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:Scan` on `ResourceTable`
+    - `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:Scan`, `dynamodb:UpdateItem` on `RequestTable`
+    - `dynamodb:GetItem`, `dynamodb:PutItem` on `ExperimentTable`
+    - `sqs:SendMessage` on `DeletionQueue`
+    - `s3:GetObject` on `reports/*` and `experiments/*`
+    - `s3:PutObject` on `experiments/*`
+  - `WorkerFunction`:
+    - `dynamodb:Scan` on `ResourceTable`
+    - `dynamodb:GetItem`, `dynamodb:UpdateItem` on `RequestTable`
+    - `s3:PutObject` on `reports/*`
+  - No wildcard admin policies or destructive cloud erasure permissions (`dynamodb:DeleteItem`, `s3:DeleteObject`) are granted.
+- **S3 Bucket:** Private, `BlockPublicAcls`, `BlockPublicPolicy`, `IgnorePublicAcls`, `RestrictPublicBuckets`, AES-256 server-side encryption, 90-day lifecycle rule.
 
-To remove the stack after reviewing its data:
+---
+
+## 10. Cost Considerations & Teardown
+
+### Cost Breakdown
+- **API Gateway HTTP API:** Free tier covers 1M requests/month; then \$1.00 per million.
+- **AWS Lambda:** 1M free requests and 3.2M seconds of compute/month under Free Tier.
+- **Amazon DynamoDB:** Pay-per-request billing mode; \$0 for inactive tables.
+- **Amazon SQS:** 1M requests/month free under Free Tier.
+- **Amazon S3:** Standard storage rates for small report JSON files (< \$0.01/month).
+
+### Teardown (Clean Deletion of All Resources)
+To remove all AWS resources created by TraceProof:
 
 ```powershell
+# Step 1: Delete CloudFormation Stack
 sam delete --stack-name <stack-name> --region <region>
-```
 
-The report bucket is deliberately retained by CloudFormation to prevent accidental loss of reports. Find its name in stack outputs, inspect it, then empty and remove it explicitly if no longer needed:
-
-```powershell
-aws s3 ls s3://<report-bucket-name>/ --recursive --region <region>
+# Step 2: Empty and Delete Retained Report Bucket (Deliberately retained by DeletionPolicy)
 aws s3 rm s3://<report-bucket-name>/ --recursive --region <region>
 aws s3api delete-bucket --bucket <report-bucket-name> --region <region>
 ```
-
-The bucket is not versioned, so the recursive removal deletes its current report objects. Confirm the bucket name and contents before running removal commands. The DynamoDB tables, queues, functions, and 14-day CloudWatch log groups are stack-managed and normally removed with the stack. SAM's deployment artifact bucket may be shared with other stacks; inspect it separately and do not remove it without confirming ownership and contents.
+All tables, queues, functions, and log groups are automatically removed with the SAM stack.

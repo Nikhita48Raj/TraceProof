@@ -1,4 +1,3 @@
-
 from copy import deepcopy
 
 
@@ -24,11 +23,53 @@ SAMPLE_RESOURCES = {
         "exists": True,
         "fail_delete": False,
     },
+    "student_002": {
+        "name": "Student Record (Enterprise)",
+        "type": "DynamoDB",
+        "depends_on": [],
+        "exists": True,
+        "fail_delete": False,
+    },
+    "attendance_002": {
+        "name": "Attendance Record",
+        "type": "DynamoDB",
+        "depends_on": ["student_002"],
+        "exists": True,
+        "fail_delete": False,
+    },
+    "report_002": {
+        "name": "Academic Report",
+        "type": "S3",
+        "depends_on": ["student_002"],
+        "exists": True,
+        "fail_delete": False,
+    },
+    "analytics_002": {
+        "name": "Analytics Dataset",
+        "type": "DynamoDB",
+        "depends_on": ["student_002"],
+        "exists": True,
+        "fail_delete": False,
+    },
+    "derived_report_002": {
+        "name": "Derived Report",
+        "type": "S3",
+        "depends_on": ["analytics_002"],
+        "exists": True,
+        "fail_delete": False,
+    },
+    "backup_002": {
+        "name": "Encrypted Backup Archive",
+        "type": "S3",
+        "depends_on": ["student_002", "report_002"],
+        "exists": True,
+        "fail_delete": False,
+    },
 }
 
 
 def get_dependency_targets(resources, root_id):
-    """Find the root and every registered dependent resource."""
+    """Find the root and every registered dependent resource, cycle-safe."""
     if root_id not in resources:
         raise ValueError(f"Unknown resource: {root_id}")
 
@@ -46,7 +87,8 @@ def get_dependency_targets(resources, root_id):
         targets.append(current_id)
 
         for resource_id, resource in resources.items():
-            if current_id in resource["depends_on"]:
+            depends = resource.get("depends_on", [])
+            if current_id in depends:
                 pending.append(resource_id)
 
     return targets
@@ -54,9 +96,11 @@ def get_dependency_targets(resources, root_id):
 
 def delete_resource(resources, resource_id):
     """Simulate deletion of a single resource."""
-    resource = resources[resource_id]
+    resource = resources.get(resource_id)
+    if not resource:
+        return False
 
-    if resource["fail_delete"]:
+    if resource.get("fail_delete", False):
         return False
 
     resource["exists"] = False
@@ -65,6 +109,8 @@ def delete_resource(resources, resource_id):
 
 def run_baseline(resources, root_id):
     """Baseline deletes only the primary record."""
+    if root_id not in resources:
+        raise ValueError(f"Unknown resource: {root_id}")
     state = deepcopy(resources)
     success = delete_resource(state, root_id)
 
@@ -74,13 +120,15 @@ def run_baseline(resources, root_id):
         "targets_checked": 1,
         "remaining_targets": [
             key for key, value in state.items()
-            if value["exists"]
+            if value.get("exists", False)
         ],
     }
 
 
 def run_traceproof(resources, root_id):
     """Delete and verify every registered dependency."""
+    if root_id not in resources:
+        raise ValueError(f"Unknown resource: {root_id}")
     state = deepcopy(resources)
     targets = get_dependency_targets(state, root_id)
     task_results = {}
@@ -92,7 +140,7 @@ def run_traceproof(resources, root_id):
 
     remaining = [
         resource_id for resource_id in targets
-        if state[resource_id]["exists"]
+        if state[resource_id].get("exists", False)
     ]
 
     return {

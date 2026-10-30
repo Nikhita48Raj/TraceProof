@@ -72,8 +72,8 @@ export default function Sidebar({ activePage, onNavigate, mobileOpen, onCloseMob
           </div>
         </div>
         {nav}
-        <p className="border-t border-white/10 px-5 py-4 text-xs text-slate-500">
-          Milestone 1 · Frontend demo
+        <p className="border-t border-white/10 px-5 py-4 text-xs text-slate-400">
+          TraceProof Research · v0.1.0
         </p>
       </aside>
     </>

@@ -25,10 +25,14 @@ Globals:
       Variables:
         RESOURCE_TABLE_NAME: !Ref ResourceTable
         REQUEST_TABLE_NAME: !Ref RequestTable
+        EXPERIMENT_TABLE_NAME: !Ref ExperimentTable
         REPORT_BUCKET: !Ref ReportBucket
         FRONTEND_ORIGIN: !Ref FrontendOrigin
 
 Resources:
+  # ── API Gateway HTTP API ────────────────────────────────────────────────────
+  # Service 1: Amazon API Gateway HTTP API
+  # Receives all browser requests, enforces CORS, routes to the ApiFunction Lambda.
   TraceProofHttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
@@ -43,6 +47,8 @@ Resources:
         AllowHeaders:
           - Content-Type
 
+  # ── DynamoDB Tables ─────────────────────────────────────────────────────────
+  # Service 2: Amazon DynamoDB (three on-demand tables)
   ResourceTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -65,6 +71,24 @@ Resources:
         - AttributeName: request_id
           KeyType: HASH
 
+  # Stores experiment run summaries (config, metrics, scenarios) so results
+  # survive Lambda cold starts and are available for CSV/Markdown export.
+  ExperimentTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: experiment_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: experiment_id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # ── SQS Queues ──────────────────────────────────────────────────────────────
+  # Service 3: Amazon SQS – deletion job queue and dead-letter queue
   DeletionDeadLetterQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -81,6 +105,9 @@ Resources:
         deadLetterTargetArn: !GetAtt DeletionDeadLetterQueue.Arn
         maxReceiveCount: !Ref MaxReceiveCount
 
+  # ── S3 Bucket ───────────────────────────────────────────────────────────────
+  # Service 4: Amazon S3 – private encrypted bucket for verification and
+  # experiment reports.  Reports expire after 90 days via lifecycle rule.
   ReportBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
@@ -101,6 +128,9 @@ Resources:
             Status: Enabled
             ExpirationInDays: 90
 
+  # ── Lambda Functions ─────────────────────────────────────────────────────────
+  # Service 5: AWS Lambda – ApiFunction handles all API Gateway HTTP routes;
+  # WorkerFunction processes deletion jobs triggered by SQS messages.
   ApiFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -113,12 +143,14 @@ Resources:
       Policies:
         - Version: '2012-10-17'
           Statement:
+            # ResourceTable: seed + list resources + dependency lookup
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
                 - dynamodb:PutItem
                 - dynamodb:Scan
               Resource: !GetAtt ResourceTable.Arn
+            # RequestTable: create, read, list, and update deletion requests
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
@@ -126,20 +158,40 @@ Resources:
                 - dynamodb:Scan
                 - dynamodb:UpdateItem
               Resource: !GetAtt RequestTable.Arn
+            # ExperimentTable: write experiment results and read them for export
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+              Resource: !GetAtt ExperimentTable.Arn
+            # DeletionQueue: enqueue deletion jobs
             - Effect: Allow
               Action:
                 - sqs:SendMessage
               Resource: !GetAtt DeletionQueue.Arn
+            # ReportBucket: presigned-URL redirect for deletion reports
+            # and read experiment report objects for CSV/Markdown export
             - Effect: Allow
               Action:
                 - s3:GetObject
               Resource: !Sub '${ReportBucket.Arn}/reports/*'
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource: !Sub '${ReportBucket.Arn}/experiments/*'
       Events:
         Root:
           Type: HttpApi
           Properties:
             ApiId: !Ref TraceProofHttpApi
             Path: /
+            Method: GET
+        Health:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /health
             Method: GET
         ResourcesList:
           Type: HttpApi
@@ -189,6 +241,26 @@ Resources:
             ApiId: !Ref TraceProofHttpApi
             Path: /experiments/run
             Method: POST
+        # Experiment export routes – results are persisted in DynamoDB and S3
+        # so these endpoints work across Lambda invocations and cold starts.
+        ExperimentTrialsCsv:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /experiments/{experiment_id}/trials.csv
+            Method: GET
+        ExperimentAggregatesCsv:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /experiments/{experiment_id}/aggregates.csv
+            Method: GET
+        ExperimentReportMd:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /experiments/{experiment_id}/report.md
+            Method: GET
 
   WorkerFunction:
     Type: AWS::Serverless::Function
@@ -211,6 +283,7 @@ Resources:
                 - dynamodb:GetItem
                 - dynamodb:UpdateItem
               Resource: !GetAtt RequestTable.Arn
+            # Worker writes verification reports to the private S3 bucket.
             - Effect: Allow
               Action:
                 - s3:PutObject
@@ -227,6 +300,8 @@ Resources:
             FunctionResponseTypes:
               - ReportBatchItemFailures
 
+  # ── CloudWatch Log Groups ────────────────────────────────────────────────────
+  # Explicit log groups give 14-day retention and predictable names.
   ApiFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -247,6 +322,8 @@ Outputs:
     Value: !Ref ResourceTable
   RequestTableName:
     Value: !Ref RequestTable
+  ExperimentTableName:
+    Value: !Ref ExperimentTable
   DeletionQueueUrl:
     Value: !Ref DeletionQueue
   DeletionDeadLetterQueueUrl:

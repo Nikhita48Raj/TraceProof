@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from 'react'
 
 import DashboardLayout from './components/layout/DashboardLayout'
@@ -19,11 +18,21 @@ import ExperimentsPage from './pages/ExperimentsPage'
 import SettingsPage from './pages/SettingsPage'
 
 function computeStats(requests, resources) {
+  const verified = requests.filter((r) => r.status === 'Verified').length
+  const incomplete = requests.filter((r) => r.status === 'Incomplete').length
+  const failed = requests.filter((r) => r.status === 'Failed').length
+  const pending = requests.filter((r) => ['Pending', 'Processing'].includes(r.status)).length
+  const resolved = verified + incomplete + failed
+  const successRate = resolved > 0 ? `${((verified / resolved) * 100).toFixed(1)}%` : 'N/A'
+
   return {
-    total: resources.length,
-    pending: requests.filter((r) => ['Pending', 'Processing'].includes(r.status)).length,
-    verified: requests.filter((r) => r.status === 'Verified').length,
-    incomplete: requests.filter((r) => r.status === 'Incomplete').length,
+    totalResources: resources.length,
+    totalRequests: requests.length,
+    pending,
+    verified,
+    incomplete,
+    failed,
+    successRate,
   }
 }
 
@@ -32,6 +41,7 @@ export default function App() {
   const [requests, setRequests] = useState([])
   const [resources, setResources] = useState([])
   const [comparison, setComparison] = useState(null)
+  const [selectedResourceId, setSelectedResourceId] = useState('')
 
   const [modalOpen, setModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -39,7 +49,7 @@ export default function App() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
-  // Load data from the Python backend.
+  // Load data from the backend.
   useEffect(() => {
     let cancelled = false
 
@@ -144,7 +154,7 @@ export default function App() {
 
     if (!resourceId || !resources.some((resource) => resource.id === resourceId)) {
       setError('Please select a valid resource.')
-      return
+      return false
     }
 
     try {
@@ -160,7 +170,7 @@ export default function App() {
       setRequests((previous) => [
         result,
         ...previous.filter(
-          (request) => request.request_id !== result.request_id
+          (request) => (request.request_id || request.id) !== (result.request_id || result.id)
         ),
       ])
 
@@ -172,6 +182,7 @@ export default function App() {
         : `Request created. Verification status: ${result.status}.${failedTargets.length ? ` Remaining targets: ${failedTargets.join(', ')}.` : ''} Simulation only; no real cloud data was deleted.`)
 
       setModalOpen(false)
+      setSelectedResourceId('')
       return true
     } catch (err) {
       setError(
@@ -187,19 +198,35 @@ export default function App() {
   const renderPage = () => {
     switch (activePage) {
       case 'lineage':
-        return <ResourceLineagePage />
+        return (
+          <ResourceLineagePage
+            resources={resources}
+            onNewRequestWithResource={(id) => {
+              setSelectedResourceId(id)
+              setModalOpen(true)
+            }}
+          />
+        )
 
       case 'requests':
         return (
           <DeletionRequestsPage
             requests={requests}
             resources={resources}
-            onNewRequest={() => setModalOpen(true)}
+            onNewRequest={() => {
+              setSelectedResourceId('')
+              setModalOpen(true)
+            }}
           />
         )
 
       case 'reports':
-        return <VerificationReportsPage requests={requests} />
+        return (
+          <VerificationReportsPage
+            requests={requests}
+            resources={resources}
+          />
+        )
 
       case 'experiments':
         return <ExperimentsPage />
@@ -214,7 +241,16 @@ export default function App() {
             requests={requests}
             resources={resources}
             stats={stats}
-            onNewRequest={() => setModalOpen(true)}
+            comparison={comparison}
+            onNewRequest={() => {
+              setSelectedResourceId('')
+              setModalOpen(true)
+            }}
+            onOpenExperiments={() => setActivePage('experiments')}
+            onSelectResource={(id) => {
+              setSelectedResourceId(id)
+              setActivePage('lineage')
+            }}
           />
         )
     }
@@ -242,14 +278,14 @@ export default function App() {
           {notice && (
             <div
               role="status"
-              className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-800"
+              className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900"
             >
               {notice}
             </div>
           )}
 
           {loading ? (
-            <div className="rounded-xl border p-6">
+            <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-500 shadow-sm">
               Loading TraceProof data from the backend...
             </div>
           ) : (
@@ -264,7 +300,7 @@ export default function App() {
 
           {comparison && (
             <p className="text-xs text-slate-500">
-              Research comparison loaded from the Python API.
+              Research comparison loaded from the backend API.
               {' '}Simulation only; no real cloud data was deleted.
             </p>
           )}
@@ -273,8 +309,12 @@ export default function App() {
 
       <NewDeletionRequestModal
         open={modalOpen}
+        initialResourceId={selectedResourceId}
         onClose={() => {
-          if (!submitting) setModalOpen(false)
+          if (!submitting) {
+            setModalOpen(false)
+            setSelectedResourceId('')
+          }
         }}
         onSubmit={handleDeletionSubmit}
         resources={resources}

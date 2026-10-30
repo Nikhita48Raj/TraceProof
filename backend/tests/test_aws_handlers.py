@@ -91,6 +91,21 @@ class FakeS3:
             raise S3PreconditionError()
         self.objects[key] = kwargs
 
+    def get_object(self, Bucket, Key):
+        key = (Bucket, Key)
+        obj = self.objects.get(key)
+        if obj is None:
+            raise KeyError(f"s3://{Bucket}/{Key} not found")
+
+        class _Body:
+            def __init__(self, data):
+                self._data = data
+
+            def read(self):
+                return self._data
+
+        return {"Body": _Body(obj["Body"])}
+
     def generate_presigned_url(self, operation, Params, ExpiresIn):
         return f"https://private.example/{Params['Key']}?expires={ExpiresIn}"
 
@@ -98,9 +113,11 @@ class FakeS3:
 def make_clients():
     resources = FakeTable("resource_id")
     requests = FakeTable("request_id")
+    experiments = FakeTable("experiment_id")
     return {
         "resources": resources,
         "requests": requests,
+        "experiments": experiments,
         "sqs": FakeSqs(),
         "s3": FakeS3(),
         "queue_url": "https://sqs.example/queue",
@@ -123,6 +140,19 @@ def response_json(response):
 class AwsApiHandlerTests(unittest.TestCase):
     def setUp(self):
         self.clients = make_clients()
+
+    def test_health_check_and_cors_preflight(self):
+        root = handle_event(api_event("GET", "/"), self.clients)
+        self.assertEqual(root["statusCode"], 200)
+        self.assertEqual(response_json(root)["mode"], "synthetic-aws")
+
+        health = handle_event(api_event("GET", "/health"), self.clients)
+        self.assertEqual(health["statusCode"], 200)
+        self.assertEqual(response_json(health)["status"], "running")
+
+        options = handle_event(api_event("OPTIONS", "/"), self.clients)
+        self.assertEqual(options["statusCode"], 200)
+        self.assertIn("Access-Control-Allow-Methods", options["headers"])
 
     def test_resource_seed_valid_invalid_and_async_acceptance(self):
         listed = handle_event(api_event("GET", "/resources"), self.clients)
@@ -167,6 +197,55 @@ class AwsApiHandlerTests(unittest.TestCase):
         self.assertIn("expires=300", report["headers"]["Location"])
         request = handle_event(api_event("GET", "/deletion-requests/req-1"), self.clients)
         self.assertEqual(response_json(request)["status"], "Verified")
+
+    def test_experiment_run_persists_and_exports_are_retrievable(self):
+        """Running an experiment stores results in DynamoDB + S3; export routes read them back."""
+        run_resp = handle_event(
+            api_event("POST", "/experiments/run", {"num_resources": 4, "trials": 1, "random_seed": 99}),
+            self.clients,
+        )
+        self.assertEqual(run_resp["statusCode"], 200)
+        run_body = response_json(run_resp)
+        experiment_id = run_body["experiment_id"]
+
+        # ExperimentTable should contain the experiment summary.
+        self.assertIn(experiment_id, self.clients["experiments"].items)
+
+        # S3 should contain the trial records object.
+        trial_key = ("private-reports", f"experiments/{experiment_id}/trial_records.json")
+        self.assertIn(trial_key, self.clients["s3"].objects)
+
+        # trials.csv export route reads from DynamoDB + S3.
+        csv_resp = handle_event(
+            api_event("GET", f"/experiments/{experiment_id}/trials.csv"),
+            self.clients,
+        )
+        self.assertEqual(csv_resp["statusCode"], 200)
+        self.assertIn("text/csv", csv_resp["headers"]["Content-Type"])
+        self.assertIn("experiment_id", csv_resp["body"])
+
+        # aggregates.csv export route.
+        agg_resp = handle_event(
+            api_event("GET", f"/experiments/{experiment_id}/aggregates.csv"),
+            self.clients,
+        )
+        self.assertEqual(agg_resp["statusCode"], 200)
+        self.assertIn("Baseline", agg_resp["body"])
+
+        # report.md export route.
+        md_resp = handle_event(
+            api_event("GET", f"/experiments/{experiment_id}/report.md"),
+            self.clients,
+        )
+        self.assertEqual(md_resp["statusCode"], 200)
+        self.assertIn("TraceProof", md_resp["body"])
+
+        # Unknown experiment_id returns 404.
+        missing = handle_event(
+            api_event("GET", "/experiments/does-not-exist/trials.csv"),
+            self.clients,
+        )
+        self.assertEqual(missing["statusCode"], 404)
 
 
 class AwsWorkerTests(unittest.TestCase):
@@ -227,8 +306,17 @@ class InfrastructureTests(unittest.TestCase):
         self.assertEqual(resources["TraceProofHttpApi"]["Properties"]["CorsConfiguration"]["AllowOrigins"], [{"Ref": "FrontendOrigin"}])
         api_events = resources["ApiFunction"]["Properties"]["Events"]
         configured_routes = {(event["Properties"].get("Path"), event["Properties"].get("Method")) for event in api_events.values()}
+        self.assertIn(("/", "GET"), configured_routes)
+        self.assertIn(("/health", "GET"), configured_routes)
         self.assertIn(("/deletion-requests/{request_id}/report", "GET"), configured_routes)
         self.assertIn(("/experiments/run", "POST"), configured_routes)
+        # Verify experiment export routes are present in the template.
+        self.assertIn(("/experiments/{experiment_id}/trials.csv", "GET"), configured_routes)
+        self.assertIn(("/experiments/{experiment_id}/aggregates.csv", "GET"), configured_routes)
+        self.assertIn(("/experiments/{experiment_id}/report.md", "GET"), configured_routes)
+        # Verify ExperimentTable exists and has TTL configured.
+        self.assertIn("ExperimentTable", resources)
+        self.assertTrue(resources["ExperimentTable"]["Properties"]["TimeToLiveSpecification"]["Enabled"])
         policy_text = str(resources)
         self.assertNotIn("dynamodb:DeleteItem", policy_text)
         self.assertNotIn("s3:DeleteObject", policy_text)

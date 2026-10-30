@@ -1,20 +1,37 @@
-"""API Gateway HTTP API adapter backed by DynamoDB, SQS and private S3."""
+"""API Gateway HTTP API adapter backed by DynamoDB, SQS, and private S3.
+
+AWS Services used
+-----------------
+1. Amazon API Gateway (HTTP API)  – routes all browser requests here.
+2. AWS Lambda                     – this function handles every route.
+3. Amazon DynamoDB                – ResourceTable, RequestTable, ExperimentTable.
+4. Amazon SQS                     – enqueues async deletion-verification jobs.
+5. Amazon S3                      – stores private verification and experiment reports.
+"""
 
 import json
 import logging
 import os
+import time
 from datetime import datetime, timezone
 from decimal import Decimal
 from urllib.parse import unquote
 from uuid import uuid4
 
 from deletion_engine import SAMPLE_RESOURCES, get_dependency_targets, run_baseline, run_traceproof
-from experiment_engine import run_reproducible_experiment
+from experiment_engine import (
+    aggregates_csv,
+    research_report,
+    run_reproducible_experiment,
+    trials_csv,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 MAX_BODY_BYTES = 32 * 1024
+# Experiment results stored in DynamoDB expire after 7 days (TTL in epoch seconds).
+EXPERIMENT_TTL_SECONDS = 7 * 24 * 60 * 60
 DEFAULT_EXPERIMENT_CONFIG = {
     "num_resources": 12,
     "dependency_density": 0.15,
@@ -32,6 +49,7 @@ def _runtime_clients():
     return {
         "resources": dynamodb.Table(os.environ["RESOURCE_TABLE_NAME"]),
         "requests": dynamodb.Table(os.environ["REQUEST_TABLE_NAME"]),
+        "experiments": dynamodb.Table(os.environ["EXPERIMENT_TABLE_NAME"]),
         "sqs": boto3.client("sqs"),
         "s3": boto3.client("s3"),
         "queue_url": os.environ["DELETION_QUEUE_URL"],
@@ -114,6 +132,65 @@ def _experiment_config(payload):
     return config
 
 
+# ── Experiment persistence helpers ────────────────────────────────────────────
+
+def _persist_experiment(table, result):
+    """Write the experiment summary and full result to DynamoDB.
+
+    The item stores the full result as a JSON string so the export routes can
+    reconstruct it without re-running the experiment.  A DynamoDB TTL attribute
+    causes the item to expire automatically after EXPERIMENT_TTL_SECONDS.
+    """
+    ttl = int(time.time()) + EXPERIMENT_TTL_SECONDS
+    # DynamoDB item size limit is 400 KB; the full result for typical configs is
+    # well under that limit.  Large trial_records are stored separately in S3.
+    trial_records = result.pop("trial_records", [])
+    item = {
+        "experiment_id": result["experiment_id"],
+        "ttl": ttl,
+        "result_json": json.dumps(result, separators=(",", ":"), default=str),
+    }
+    table.put_item(Item=item)
+    return trial_records
+
+
+def _persist_trial_records(s3_client, bucket, experiment_id, trial_records):
+    """Upload trial-level records to S3 so trials.csv export works across invocations."""
+    key = f"experiments/{experiment_id}/trial_records.json"
+    s3_client.put_object(
+        Bucket=bucket,
+        Key=key,
+        Body=json.dumps(trial_records, separators=(",", ":"), default=str).encode("utf-8"),
+        ContentType="application/json",
+        ServerSideEncryption="AES256",
+    )
+    return key
+
+
+def _load_experiment(table, s3_client, bucket, experiment_id):
+    """Fetch the experiment summary from DynamoDB and trial records from S3.
+
+    Returns the reconstructed result dict (with trial_records populated) or
+    raises ValueError if not found.
+    """
+    resp = table.get_item(Key={"experiment_id": experiment_id}, ConsistentRead=True)
+    item = resp.get("Item")
+    if not item:
+        raise ValueError("Experiment result not found.")
+    result = json.loads(item["result_json"])
+    # Fetch trial records from S3 for CSV exports.
+    trial_key = f"experiments/{experiment_id}/trial_records.json"
+    try:
+        obj = s3_client.get_object(Bucket=bucket, Key=trial_key)
+        result["trial_records"] = json.loads(obj["Body"].read().decode("utf-8"))
+    except Exception:
+        # If trial records are unavailable (e.g. expired), return an empty list.
+        result["trial_records"] = []
+    return result
+
+
+# ── Main request dispatcher ───────────────────────────────────────────────────
+
 def handle_event(event, clients):
     http = event.get("requestContext", {}).get("http", {})
     method = http.get("method", "GET").upper()
@@ -126,9 +203,15 @@ def handle_event(event, clients):
         return _error(413, "Request body is too large.")
 
     try:
-        if method == "GET" and path == "/":
-            return _response(200, {"name": "TraceProof API", "status": "running", "mode": "synthetic-aws"})
+        # ── Preflight CORS ────────────────────────────────────────────────────
+        if method == "OPTIONS":
+            return _response(200, headers={"Access-Control-Allow-Methods": "GET,POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type"})
 
+        # ── Health check ──────────────────────────────────────────────────────
+        if method == "GET" and path in {"/", "/health"}:
+            return _response(200, {"name": "TraceProof API", "status": "running", "mode": "synthetic-aws", "service": "TraceProof API"})
+
+        # ── Resource registry ─────────────────────────────────────────────────
         if method == "GET" and path == "/resources":
             _seed_resources(clients["resources"])
             items = _all_items(clients["resources"], consistent=True)
@@ -152,6 +235,7 @@ def handle_event(event, clients):
                 for target in targets
             ]})
 
+        # ── Deletion requests ─────────────────────────────────────────────────
         if method == "POST" and path == "/deletion-requests":
             if len(body_text.encode("utf-8")) > MAX_BODY_BYTES:
                 return _error(413, "Request body is too large.")
@@ -182,8 +266,10 @@ def handle_event(event, clients):
                 "simulation_only": True,
                 "simulate_failure": body.get("simulate_failure", False),
             }
+            # DynamoDB: persist the deletion request record.
             clients["requests"].put_item(Item=item, ConditionExpression="attribute_not_exists(request_id)")
             try:
+                # SQS: enqueue the request ID so the WorkerFunction picks it up.
                 clients["sqs"].send_message(
                     QueueUrl=clients["queue_url"],
                     MessageBody=json.dumps({"request_id": request_id}),
@@ -217,25 +303,88 @@ def handle_event(event, clients):
                 report_key = item.get("report_key")
                 if not report_key:
                     return _error(404, "Verification report is not ready")
+                # S3: generate a 5-minute presigned URL and redirect the browser.
                 url = clients["s3"].generate_presigned_url(
                     "get_object", Params={"Bucket": clients["report_bucket"], "Key": report_key}, ExpiresIn=300
                 )
                 return _response(302, headers={"Location": url, "Cache-Control": "no-store"})
             return _response(200, item)
 
+        # ── Experiment compare ────────────────────────────────────────────────
         if method == "GET" and path == "/experiments/compare":
             baseline = run_baseline(SAMPLE_RESOURCES, "student_001")
             traceproof = run_traceproof(SAMPLE_RESOURCES, "student_001")
             return _response(200, {"simulation_only": True, "baseline": baseline, "traceproof": traceproof})
 
+        # ── Experiment run ────────────────────────────────────────────────────
         if method == "POST" and path == "/experiments/run":
             try:
                 config = _experiment_config(json.loads(body_text))
             except (json.JSONDecodeError, ValueError) as exc:
                 return _error(422, str(exc))
             result = run_reproducible_experiment(config)
+
+            # Persist experiment summary to DynamoDB (ExperimentTable).
+            # Trial records (potentially large) are stored separately in S3.
+            try:
+                trial_records = _persist_experiment(clients["experiments"], result)
+                _persist_trial_records(clients["s3"], clients["report_bucket"], result["experiment_id"], trial_records)
+                result["trial_records"] = trial_records
+            except Exception:
+                logger.exception("Failed to persist experiment %s", result.get("experiment_id"))
+                # Non-fatal: the result is still returned to the caller but
+                # export routes will return 404 for this experiment_id.
+
             result.pop("trial_records", None)
             return _response(200, result)
+
+        # ── Experiment export routes ──────────────────────────────────────────
+        # These routes reconstruct the full result from DynamoDB + S3 so they
+        # work across Lambda invocations and cold starts.
+
+        exp_prefix = "/experiments/"
+        if method == "GET" and path.startswith(exp_prefix):
+            suffix = path[len(exp_prefix):]
+            for export_kind in ("trials.csv", "aggregates.csv", "report.md"):
+                if suffix.endswith(f"/{export_kind}"):
+                    experiment_id = unquote(suffix[: -len(f"/{export_kind}")].strip("/"))
+                    try:
+                        result = _load_experiment(
+                            clients["experiments"], clients["s3"], clients["report_bucket"], experiment_id
+                        )
+                    except ValueError as exc:
+                        return _error(404, str(exc))
+
+                    if export_kind == "trials.csv":
+                        csv_body = trials_csv(result)
+                        return _response(
+                            200,
+                            headers={
+                                "Content-Type": "text/csv",
+                                "Content-Disposition": f'attachment; filename="traceproof-{experiment_id}-trials.csv"',
+                            },
+                            body=csv_body,
+                        )
+                    if export_kind == "aggregates.csv":
+                        csv_body = aggregates_csv(result)
+                        return _response(
+                            200,
+                            headers={
+                                "Content-Type": "text/csv",
+                                "Content-Disposition": f'attachment; filename="traceproof-{experiment_id}-aggregates.csv"',
+                            },
+                            body=csv_body,
+                        )
+                    if export_kind == "report.md":
+                        md_body = research_report(result)
+                        return _response(
+                            200,
+                            headers={
+                                "Content-Type": "text/markdown; charset=utf-8",
+                                "Content-Disposition": f'attachment; filename="traceproof-{experiment_id}-report.md"',
+                            },
+                            body=md_body,
+                        )
 
         return _error(404, "Endpoint not found")
     except Exception:
