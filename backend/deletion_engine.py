@@ -22,7 +22,7 @@ SAMPLE_RESOURCES = {
         "type": "DynamoDB",
         "depends_on": ["student_001"],
         "exists": True,
-        "fail_delete": True,
+        "fail_delete": False,
     },
 }
 

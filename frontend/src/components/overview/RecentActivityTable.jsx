@@ -1,6 +1,7 @@
 import StatusBadge from '../ui/StatusBadge'
 import EmptyState from '../ui/EmptyState'
 import { Inbox } from 'lucide-react'
+import { getVerificationReportUrl } from '../../api/traceproof'
 
 function formatTimestamp(iso) {
   try {
@@ -13,7 +14,7 @@ function formatTimestamp(iso) {
   }
 }
 
-export default function RecentActivityTable({ requests, limit = 5 }) {
+export default function RecentActivityTable({ requests, resources = [], limit = 5 }) {
   const rows = requests.slice(0, limit)
 
   return (
@@ -55,25 +56,37 @@ export default function RecentActivityTable({ requests, limit = 5 }) {
                 <th scope="col" className="px-5 py-3">
                   Timestamp
                 </th>
+                <th scope="col" className="px-5 py-3">Report</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map((row) => (
-                <tr key={row.id} className="hover:bg-slate-50/50">
+                <tr key={row.request_id ?? row.id} className="hover:bg-slate-50/50">
                   <td className="whitespace-nowrap px-5 py-3 font-mono text-xs text-slate-700">
-                    {row.id}
+                    {row.request_id ?? row.id}
                   </td>
                   <td className="max-w-[200px] truncate px-5 py-3 text-slate-700 sm:max-w-xs">
-                    {row.resourceLabel}
+                    {row.resourceLabel ?? resources.find((resource) => resource.id === row.resource_id)?.name ?? row.resource_id}
                   </td>
                   <td className="px-5 py-3">
                     <StatusBadge status={row.status} />
                   </td>
                   <td className="px-5 py-3 tabular-nums text-slate-700">
-                    {row.targetsChecked}
+                    {row.targets_checked ?? row.targetsChecked}
                   </td>
                   <td className="whitespace-nowrap px-5 py-3 text-slate-600">
-                    {formatTimestamp(row.timestamp)}
+                    {formatTimestamp(row.created_at ?? row.timestamp)}
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-3">
+                    {row.report_key ? (
+                      <a className="font-medium text-blue-700 hover:underline" href={getVerificationReportUrl(row.request_id)} target="_blank" rel="noreferrer">
+                        JSON report
+                      </a>
+                    ) : row.status === 'Pending' || row.status === 'Processing' ? (
+                      <span className="text-slate-400">Preparing…</span>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
                   </td>
                 </tr>
               ))}

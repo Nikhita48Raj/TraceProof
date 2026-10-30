@@ -3,9 +3,9 @@ from copy import deepcopy
 from uuid import uuid4
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from deletion_engine import (
     SAMPLE_RESOURCES,
@@ -13,6 +13,7 @@ from deletion_engine import (
     run_baseline,
     run_traceproof,
 )
+from experiment_engine import aggregates_csv, research_report, run_reproducible_experiment, trials_csv
 
 app = FastAPI(
     title="TraceProof API",
@@ -32,11 +33,29 @@ app.add_middleware(
 
 resources = deepcopy(SAMPLE_RESOURCES)
 requests = {}
+experiment_results = {}
 
 
 class DeletionRequest(BaseModel):
-    resource_id: str = Field(min_length=1)
+    resource_id: str = Field(min_length=1, max_length=200)
     simulate_failure: bool = False
+
+
+class ExperimentConfig(BaseModel):
+    num_resources: int = Field(default=12, ge=4, le=100)
+    dependency_density: float = Field(default=0.15, ge=0, le=1)
+    failure_rate: float = Field(default=0.2, ge=0, le=1)
+    trials: int = Field(default=5, ge=1, le=100)
+    random_seed: int = Field(default=42, ge=0, le=2147483647)
+    dependency_depth: int = Field(default=1, ge=1, le=99)
+
+    @model_validator(mode="after")
+    def validate_experiment_size(self):
+        if self.dependency_depth >= self.num_resources:
+            raise ValueError("dependency_depth must be less than num_resources")
+        if self.num_resources * self.trials * 9 > 40000:
+            raise ValueError("Experiment is too large; reduce resources or trials")
+        return self
 
 
 @app.get("/")
@@ -142,3 +161,37 @@ def compare_schedulers():
         "baseline": baseline,
         "traceproof": traceproof,
     }
+
+
+@app.post("/experiments/run")
+def run_experiment(body: ExperimentConfig):
+    result = run_reproducible_experiment(body.model_dump())
+    experiment_results[result["experiment_id"]] = result
+    while len(experiment_results) > 20:
+        experiment_results.pop(next(iter(experiment_results)))
+    return {key: value for key, value in result.items() if key != "trial_records"}
+
+
+def _experiment_result(experiment_id):
+    result = experiment_results.get(experiment_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Experiment result not found")
+    return result
+
+
+@app.get("/experiments/{experiment_id}/trials.csv")
+def export_experiment_trials(experiment_id: str):
+    return Response(trials_csv(_experiment_result(experiment_id)), media_type="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="traceproof-{experiment_id}-trials.csv"'})
+
+
+@app.get("/experiments/{experiment_id}/aggregates.csv")
+def export_experiment_aggregates(experiment_id: str):
+    return Response(aggregates_csv(_experiment_result(experiment_id)), media_type="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="traceproof-{experiment_id}-aggregates.csv"'})
+
+
+@app.get("/experiments/{experiment_id}/report.md")
+def export_experiment_report(experiment_id: str):
+    return Response(research_report(_experiment_result(experiment_id)), media_type="text/markdown; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="traceproof-{experiment_id}-report.md"'})

@@ -1,0 +1,255 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: TraceProof synthetic deletion verification research prototype
+
+Parameters:
+  FrontendOrigin:
+    Type: String
+    Default: http://localhost:5173
+    Description: Exact browser origin allowed to call the API (scheme and host, no path).
+  MaxReceiveCount:
+    Type: Number
+    Default: 3
+    MinValue: 2
+    MaxValue: 5
+    Description: Failed receives before SQS moves a job to the dead-letter queue.
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 256
+    Architectures:
+      - arm64
+    Environment:
+      Variables:
+        RESOURCE_TABLE_NAME: !Ref ResourceTable
+        REQUEST_TABLE_NAME: !Ref RequestTable
+        REPORT_BUCKET: !Ref ReportBucket
+        FRONTEND_ORIGIN: !Ref FrontendOrigin
+
+Resources:
+  TraceProofHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: $default
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref FrontendOrigin
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+
+  ResourceTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: resource_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: resource_id
+          KeyType: HASH
+
+  RequestTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: request_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: request_id
+          KeyType: HASH
+
+  DeletionDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
+
+  DeletionQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 345600
+      SqsManagedSseEnabled: true
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeletionDeadLetterQueue.Arn
+        maxReceiveCount: !Ref MaxReceiveCount
+
+  ReportBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireSyntheticReports
+            Status: Enabled
+            ExpirationInDays: 90
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: aws_handlers.api.lambda_handler
+      Timeout: 15
+      Environment:
+        Variables:
+          DELETION_QUEUE_URL: !Ref DeletionQueue
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:Scan
+              Resource: !GetAtt ResourceTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+              Resource: !GetAtt RequestTable.Arn
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: !GetAtt DeletionQueue.Arn
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: !Sub '${ReportBucket.Arn}/reports/*'
+      Events:
+        Root:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /
+            Method: GET
+        ResourcesList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /resources
+            Method: GET
+        Dependencies:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /resources/{resource_id}/dependencies
+            Method: GET
+        DeletionCreate:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /deletion-requests
+            Method: POST
+        DeletionList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /deletion-requests
+            Method: GET
+        DeletionRead:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /deletion-requests/{request_id}
+            Method: GET
+        ReportRead:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /deletion-requests/{request_id}/report
+            Method: GET
+        ExperimentCompare:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /experiments/compare
+            Method: GET
+        ExperimentRun:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TraceProofHttpApi
+            Path: /experiments/run
+            Method: POST
+
+  WorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: aws_handlers.worker.lambda_handler
+      Timeout: 45
+      Environment:
+        Variables:
+          MAX_RECEIVE_COUNT: !Ref MaxReceiveCount
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+              Resource: !GetAtt ResourceTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource: !GetAtt RequestTable.Arn
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub '${ReportBucket.Arn}/reports/*'
+      Events:
+        DeletionJobs:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt DeletionQueue.Arn
+            BatchSize: 1
+            MaximumBatchingWindowInSeconds: 0
+            ScalingConfig:
+              MaximumConcurrency: 2
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+
+  ApiFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ApiFunction}'
+      RetentionInDays: 14
+
+  WorkerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${WorkerFunction}'
+      RetentionInDays: 14
+
+Outputs:
+  ApiBaseUrl:
+    Description: API Gateway HTTP API base URL
+    Value: !Sub 'https://${TraceProofHttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}'
+  ResourceTableName:
+    Value: !Ref ResourceTable
+  RequestTableName:
+    Value: !Ref RequestTable
+  DeletionQueueUrl:
+    Value: !Ref DeletionQueue
+  DeletionDeadLetterQueueUrl:
+    Value: !Ref DeletionDeadLetterQueue
+  ReportBucketName:
+    Value: !Ref ReportBucket

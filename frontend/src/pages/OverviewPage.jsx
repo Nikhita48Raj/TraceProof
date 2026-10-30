@@ -4,9 +4,8 @@ import StatCards from '../components/overview/StatCards'
 import DependencyGraph from '../components/overview/DependencyGraph'
 import RecentActivityTable from '../components/overview/RecentActivityTable'
 import ExperimentPanel from '../components/overview/ExperimentPanel'
-import { TOTAL_REGISTERED_RESOURCES } from '../data/sampleData'
 
-export default function OverviewPage({ requests, stats, onNewRequest }) {
+export default function OverviewPage({ requests, resources, stats, onNewRequest }) {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -35,11 +34,10 @@ export default function OverviewPage({ requests, stats, onNewRequest }) {
         <ExperimentPanel />
       </div>
 
-      <RecentActivityTable requests={requests} />
+      <RecentActivityTable requests={requests} resources={resources} />
 
       <p className="text-center text-xs text-slate-400">
-        Registered resources (demo total): {TOTAL_REGISTERED_RESOURCES} · Metrics
-        derived from sample request set
+        Registered resources and request metrics loaded from the simulation API.
       </p>
     </div>
   )

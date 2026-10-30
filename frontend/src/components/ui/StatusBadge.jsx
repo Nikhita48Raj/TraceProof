@@ -1,8 +1,10 @@
 const STYLES = {
   Verified: 'bg-[var(--color-verified-bg)] text-[var(--color-verified)] border-emerald-200',
   Pending: 'bg-[var(--color-pending-bg)] text-[var(--color-pending)] border-amber-200',
+  Processing: 'bg-blue-50 text-blue-700 border-blue-200',
   Incomplete:
     'bg-[var(--color-incomplete-bg)] text-[var(--color-incomplete)] border-red-200',
+  Failed: 'bg-slate-100 text-slate-700 border-slate-300',
 }
 
 export default function StatusBadge({ status }) {

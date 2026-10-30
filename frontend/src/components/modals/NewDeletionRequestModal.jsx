@@ -1,47 +1,37 @@
 import { useState } from 'react'
 import Modal from '../ui/Modal'
-import { SAMPLE_RESOURCES } from '../../data/sampleData'
 
-function generateRequestId() {
-  const n = Math.floor(Math.random() * 900) + 100
-  return `DR-2026-${n}`
-}
-
-export default function NewDeletionRequestModal({ open, onClose, onSubmit }) {
+export default function NewDeletionRequestModal({ open, onClose, onSubmit, resources, submitting: requestSubmitting }) {
   const [resourceId, setResourceId] = useState('')
   const [error, setError] = useState('')
+  const [simulateFailure, setSimulateFailure] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  const selected = SAMPLE_RESOURCES.find((r) => r.id === resourceId)
+  const selected = resources.find((r) => r.id === resourceId)
+  const isSubmitting = submitting || requestSubmitting
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!resourceId) {
-      setError('Select a sample resource to continue.')
+    if (!selected) {
+      setError('Select a registered resource to continue.')
       return
     }
     setError('')
     setSubmitting(true)
-
-    const resource = SAMPLE_RESOURCES.find((r) => r.id === resourceId)
-    const targetsChecked = 1 + (resource?.dependents?.length ?? 0)
-
-    onSubmit({
-      id: generateRequestId(),
-      resourceId: resource.id,
-      resourceLabel: `${resource.name} (${resource.type})`,
-      status: 'Pending',
-      targetsChecked: 0,
-      timestamp: new Date().toISOString(),
-      _simulatedTargets: targetsChecked,
-    })
-
-    setSubmitting(false)
-    setResourceId('')
-    onClose()
+    try {
+      const submitted = await onSubmit({ resource_id: selected.id, simulate_failure: simulateFailure })
+      if (submitted) {
+        setResourceId('')
+        setError('')
+        setSimulateFailure(false)
+      }
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleClose = () => {
+    if (isSubmitting) return
     setError('')
     setResourceId('')
     onClose()
@@ -57,6 +47,7 @@ export default function NewDeletionRequestModal({ open, onClose, onSubmit }) {
           <button
             type="button"
             onClick={handleClose}
+            disabled={isSubmitting}
             className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Cancel
@@ -64,10 +55,10 @@ export default function NewDeletionRequestModal({ open, onClose, onSubmit }) {
           <button
             type="submit"
             form="new-deletion-request-form"
-            disabled={submitting}
+            disabled={isSubmitting || !resources.length}
             className="rounded-lg bg-navy-900 px-4 py-2 text-sm font-medium text-white hover:bg-navy-800 disabled:opacity-60"
           >
-            Simulate request
+            {isSubmitting ? 'Processing…' : 'Simulate request'}
           </button>
         </div>
       }
@@ -95,12 +86,22 @@ export default function NewDeletionRequestModal({ open, onClose, onSubmit }) {
           }`}
         >
           <option value="">Choose a resource…</option>
-          {SAMPLE_RESOURCES.map((r) => (
+          {resources.map((r) => (
             <option key={r.id} value={r.id}>
               {r.name} ({r.type})
             </option>
           ))}
         </select>
+        <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={simulateFailure}
+            disabled={isSubmitting}
+            onChange={(e) => setSimulateFailure(e.target.checked)}
+            className="rounded border-slate-300"
+          />
+          Simulate a dependent-resource deletion failure
+        </label>
         {error && (
           <p id="resource-select-error" className="mt-2 text-sm text-red-600" role="alert">
             {error}
@@ -113,17 +114,17 @@ export default function NewDeletionRequestModal({ open, onClose, onSubmit }) {
               Dependent targets to verify
             </h3>
             <p className="mt-1 text-xs text-slate-500">
-              These would be checked in a full TraceProof workflow (demo list).
+              These registered resources will be checked in the simulation.
             </p>
             <ul className="mt-3 space-y-2">
               <li className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
                 <span className="font-medium text-slate-800">Primary:</span>{' '}
                 {selected.name} ({selected.type})
               </li>
-              {selected.dependents.length === 0 ? (
+              {selected.depends_on.length === 0 && !resources.some((r) => r.depends_on.includes(selected.id)) ? (
                 <li className="text-sm text-slate-500 italic">No downstream dependents.</li>
               ) : (
-                selected.dependents.map((dep) => (
+                resources.filter((r) => r.id === selected.id || r.depends_on.includes(selected.id)).filter((r) => r.id !== selected.id).map((dep) => (
                   <li
                     key={dep.id}
                     className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"

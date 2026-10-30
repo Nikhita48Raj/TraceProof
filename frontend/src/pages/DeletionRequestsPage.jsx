@@ -3,7 +3,7 @@ import RecentActivityTable from '../components/overview/RecentActivityTable'
 import DemoDataBanner from '../components/ui/DemoDataBanner'
 import EmptyState from '../components/ui/EmptyState'
 
-export default function DeletionRequestsPage({ requests, onNewRequest }) {
+export default function DeletionRequestsPage({ requests, resources, onNewRequest }) {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -36,7 +36,7 @@ export default function DeletionRequestsPage({ requests, onNewRequest }) {
           }
         />
       ) : (
-        <RecentActivityTable requests={requests} limit={50} />
+        <RecentActivityTable requests={requests} resources={resources} limit={50} />
       )}
     </div>
   )
