@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+<style>
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .bold { font-weight: 700; }
+  .extrabold { font-weight: 800; }
+  .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+</style>
+
+<rect width="1280" height="720" fill="#ffffff" />
+<rect width="1280" height="44" fill="#1a2735" />
+<text x="20" y="28" font-size="16" font-weight="800" fill="#ec7211">aws <tspan fill="#ffffff" font-weight="500">DynamoDB</tspan></text>
+<text x="960" y="28" font-size="12" fill="#ffffff">ap-south-1 (Mumbai)  |  traceproof-research (222308824293)</text>
+
+<rect y="44" width="1280" height="38" fill="#232f3e" />
+<text x="32" y="68" font-size="13" fill="#d5dbdb">Tables &gt; </text>
+<text x="85" y="68" font-size="13" font-weight="700" fill="#ffffff">traceproof-RequestTable-8KB21LA9 &gt; Explore items</text>
+<rect x="83" y="80" width="340" height="2" fill="#ec7211" />
+
+<!-- Main Area -->
+<rect x="40" y="105" width="1200" height="40" rx="4" fill="#edf7ed" stroke="#1e4620" />
+<text x="56" y="130" font-size="13" font-weight="700" fill="#1e4620">✓ Completed • Items returned: 4 • Scan efficiency: 100% • Consumed Read Capacity: 0.5 RCU</text>
+
+<text x="40" y="180" font-size="20" font-weight="700" fill="#16191f">Items returned (4)</text>
+
+<rect x="40" y="200" width="1200" height="480" rx="6" fill="#ffffff" stroke="#eaeded" />
+<rect x="40" y="200" width="1200" height="38" fill="#f2f3f3" />
+<text x="60" y="224" font-size="12" font-weight="700" fill="#545b64">request_id (String)</text>
+<text x="320" y="224" font-size="12" font-weight="700" fill="#545b64">resource_id</text>
+<text x="450" y="224" font-size="12" font-weight="700" fill="#545b64">status</text>
+<text x="550" y="224" font-size="12" font-weight="700" fill="#545b64">targets_checked</text>
+<text x="680" y="224" font-size="12" font-weight="700" fill="#545b64">task_results</text>
+<text x="960" y="224" font-size="12" font-weight="700" fill="#545b64">report_key</text>
+
+<!-- Row 1 -->
+<line x1="40" y1="280" x2="1240" y2="280" stroke="#eaeded" />
+<text x="60" y="258" font-family="monospace" font-size="12" fill="#0073bb">7a30a384-9d0a-4b67-bc78</text>
+<text x="320" y="258" font-size="12.5" fill="#16191f">student_002</text>
+<rect x="450" y="244" width="60" height="20" rx="4" fill="#edf7ed" />
+<text x="458" y="258" font-size="11" font-weight="700" fill="#1e4620">Verified</text>
+<text x="550" y="258" font-size="12.5" fill="#16191f">2</text>
+<text x="680" y="258" font-family="monospace" font-size="11.5" fill="#16191f">{"backup_002": true, "report_002": true}</text>
+<text x="960" y="258" font-family="monospace" font-size="11.5" fill="#545b64">reports/7a30a384-9d0a...json</text>
+
+<!-- Row 2 -->
+<line x1="40" y1="330" x2="1240" y2="330" stroke="#eaeded" />
+<text x="60" y="308" font-family="monospace" font-size="12" fill="#0073bb">9f82d1c4-11e2-482a-912b</text>
+<text x="320" y="308" font-size="12.5" fill="#16191f">student_001</text>
+<rect x="450" y="294" width="75" height="20" rx="4" fill="#fee2e2" />
+<text x="458" y="308" font-size="11" font-weight="700" fill="#991b1b">Incomplete</text>
+<text x="550" y="308" font-size="12.5" fill="#16191f">4</text>
+<text x="680" y="308" font-family="monospace" font-size="11.5" fill="#16191f">{"attendance_001": true, "analytics_001": false}</text>
+<text x="960" y="308" font-family="monospace" font-size="11.5" fill="#545b64">reports/9f82d1c4-11e2...json</text>
+
+<!-- Row 3 -->
+<line x1="40" y1="380" x2="1240" y2="380" stroke="#eaeded" />
+<text x="60" y="358" font-family="monospace" font-size="12" fill="#0073bb">3e811bc9-77a1-4ca5-983e</text>
+<text x="320" y="358" font-size="12.5" fill="#16191f">student_001</text>
+<rect x="450" y="344" width="60" height="20" rx="4" fill="#edf7ed" />
+<text x="458" y="358" font-size="11" font-weight="700" fill="#1e4620">Verified</text>
+<text x="550" y="358" font-size="12.5" fill="#16191f">4</text>
+<text x="680" y="358" font-family="monospace" font-size="11.5" fill="#16191f">{"attendance_001": true, "report_001": true...}</text>
+<text x="960" y="358" font-family="monospace" font-size="11.5" fill="#545b64">reports/3e811bc9-77a1...json</text>
+
+</svg>

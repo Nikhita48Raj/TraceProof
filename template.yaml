@@ -127,6 +127,16 @@ Resources:
           - Id: ExpireSyntheticReports
             Status: Enabled
             ExpirationInDays: 90
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - HEAD
+            AllowedOrigins:
+              - !Ref FrontendOrigin
+            MaxAge: 3600
 
   # ── Lambda Functions ─────────────────────────────────────────────────────────
   # Service 5: AWS Lambda – ApiFunction handles all API Gateway HTTP routes;

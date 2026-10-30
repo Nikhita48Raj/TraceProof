@@ -192,9 +192,24 @@ class AwsApiHandlerTests(unittest.TestCase):
 
     def test_private_report_link_and_final_request_read(self):
         self.clients["requests"].put_item(Item={"request_id": "req-1", "status": "Verified", "report_key": "reports/req-1.json"})
+        self.clients["s3"].put_object(
+            Bucket="private-reports",
+            Key="reports/req-1.json",
+            Body=json.dumps({"request_id": "req-1", "status": "Verified", "simulation_only": True}),
+        )
+        # Direct JSON report retrieval (default for modal inspection)
         report = handle_event(api_event("GET", "/deletion-requests/req-1/report"), self.clients)
-        self.assertEqual(report["statusCode"], 302)
-        self.assertIn("expires=300", report["headers"]["Location"])
+        self.assertEqual(report["statusCode"], 200)
+        report_body = response_json(report)
+        self.assertEqual(report_body["request_id"], "req-1")
+        self.assertEqual(report_body["status"], "Verified")
+
+        # Presigned URL redirect when redirect=true query parameter is supplied
+        redirect_event = {**api_event("GET", "/deletion-requests/req-1/report"), "queryStringParameters": {"redirect": "true"}}
+        redirect_resp = handle_event(redirect_event, self.clients)
+        self.assertEqual(redirect_resp["statusCode"], 302)
+        self.assertIn("expires=300", redirect_resp["headers"]["Location"])
+
         request = handle_event(api_event("GET", "/deletion-requests/req-1"), self.clients)
         self.assertEqual(response_json(request)["status"], "Verified")
 
@@ -303,6 +318,8 @@ class InfrastructureTests(unittest.TestCase):
         report_properties = resources["ReportBucket"]["Properties"]
         self.assertTrue(report_properties["PublicAccessBlockConfiguration"]["BlockPublicPolicy"])
         self.assertEqual(report_properties["BucketEncryption"]["ServerSideEncryptionConfiguration"][0]["ServerSideEncryptionByDefault"]["SSEAlgorithm"], "AES256")
+        self.assertIn("CorsConfiguration", report_properties)
+        self.assertEqual(report_properties["CorsConfiguration"]["CorsRules"][0]["AllowedOrigins"], [{"Ref": "FrontendOrigin"}])
         self.assertEqual(resources["TraceProofHttpApi"]["Properties"]["CorsConfiguration"]["AllowOrigins"], [{"Ref": "FrontendOrigin"}])
         api_events = resources["ApiFunction"]["Properties"]["Events"]
         configured_routes = {(event["Properties"].get("Path"), event["Properties"].get("Method")) for event in api_events.values()}

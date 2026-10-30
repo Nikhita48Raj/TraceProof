@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+<style>
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .bold { font-weight: 700; }
+  .extrabold { font-weight: 800; }
+  .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+</style>
+
+<rect width="1280" height="720" fill="#f8fafc" />
+<rect width="1280" height="56" fill="#0f172a" />
+<circle cx="50" cy="28" r="5" fill="#38bdf8" />
+<text x="65" y="34" font-size="18" font-weight="800" fill="#ffffff">TraceProof</text>
+<text x="240" y="33" font-size="13.5" font-weight="500" fill="#94a3b8">Overview</text>
+<text x="340" y="33" font-size="13.5" font-weight="500" fill="#94a3b8">Resources</text>
+<text x="450" y="33" font-size="13.5" font-weight="700" fill="#ffffff">Deletion Requests</text>
+<rect x="448" y="46" width="130" height="2" fill="#38bdf8" />
+<text x="610" y="33" font-size="13.5" font-weight="500" fill="#94a3b8">Verification Reports</text>
+<text x="785" y="33" font-size="13.5" font-weight="500" fill="#94a3b8">Experiment Runner</text>
+
+<text x="40" y="105" font-size="22" font-weight="800" fill="#0f172a">Initiate Deletion Verification Request</text>
+<text x="40" y="126" font-size="12.5" fill="#64748b">Submit an asynchronous deletion simulation job across the registered dependency graph</text>
+
+<rect x="40" y="150" width="680" height="530" rx="10" fill="#ffffff" stroke="#e2e8f0" />
+<text x="65" y="185" font-size="15" font-weight="800" fill="#0f172a">Request Configuration</text>
+
+<text x="65" y="225" font-size="11.5" font-weight="700" fill="#64748b">TARGET RESOURCE ID</text>
+<rect x="65" y="235" width="630" height="38" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+<text x="80" y="259" font-size="13" font-weight="700" fill="#0f172a">student_001 (Primary Student Record)</text>
+
+<text x="65" y="300" font-size="11.5" font-weight="700" fill="#64748b">DETECTED DEPENDENCY CLOSURE TARGETS</text>
+<rect x="65" y="310" width="630" height="65" rx="6" fill="#f0fdf4" stroke="#86efac" />
+<text x="80" y="335" font-size="12" font-weight="700" fill="#166534">4 Total Targets will be Verified:</text>
+<text x="80" y="355" font-size="11.5" fill="#14532d">student_001, attendance_001, academic_report_001, analytics_dataset_001</text>
+
+<text x="65" y="405" font-size="11.5" font-weight="700" fill="#64748b">SIMULATE ORPHAN FAILURE (RESEARCH EVALUATION)</text>
+<rect x="65" y="415" width="630" height="50" rx="6" fill="#fffaf0" stroke="#fecaca" />
+<circle cx="85" cy="440" r="8" fill="#dc2626" />
+<text x="105" y="445" font-size="12" font-weight="700" fill="#991b1b">Inject synthetic deletion failure in child dependency (to test incomplete detection)</text>
+
+<rect x="65" y="490" width="220" height="42" rx="6" fill="#0284c7" />
+<text x="95" y="516" font-size="13" font-weight="800" fill="#ffffff">Submit Deletion Request</text>
+
+<!-- Response Box on Right -->
+<rect x="745" y="150" width="495" height="530" rx="10" fill="#ffffff" stroke="#e2e8f0" />
+<text x="770" y="185" font-size="15" font-weight="800" fill="#0f172a">API Gateway Asynchronous Response</text>
+
+<rect x="770" y="210" width="445" height="42" rx="6" fill="#edf7ed" stroke="#1e4620" />
+<text x="785" y="236" font-size="13" font-weight="800" fill="#1e4620">✓ HTTP 202 Accepted: Simulation Job Enqueued to SQS</text>
+
+<rect x="770" y="270" width="445" height="380" rx="8" fill="#0f172a" />
+<text x="790" y="305" font-family="monospace" font-size="12" fill="#38bdf8">{</text>
+<text x="810" y="330" font-family="monospace" font-size="12" fill="#94a3b8">"request_id": <tspan fill="#f472b6">"7a30a384-9d0a-4b67-bc78-cc45884bee3b"</tspan>,</text>
+<text x="810" y="355" font-family="monospace" font-size="12" fill="#94a3b8">"resource_id": <tspan fill="#f472b6">"student_001"</tspan>,</text>
+<text x="810" y="380" font-family="monospace" font-size="12" fill="#94a3b8">"status": <tspan fill="#fde047">"Pending"</tspan>,</text>
+<text x="810" y="405" font-family="monospace" font-size="12" fill="#94a3b8">"created_at": <tspan fill="#38bdf8">"2026-10-30T23:14:02.128Z"</tspan>,</text>
+<text x="810" y="430" font-family="monospace" font-size="12" fill="#94a3b8">"simulation_only": <tspan fill="#4ade80">true</tspan>,</text>
+<text x="810" y="455" font-family="monospace" font-size="12" fill="#94a3b8">"message": <tspan fill="#f472b6">"Asynchronous verification job queued."</tspan></text>
+<text x="790" y="480" font-family="monospace" font-size="12" fill="#38bdf8">}</text>
+
+<text x="790" y="525" font-size="11.5" fill="#94a3b8">WorkerFunction will poll this job from SQS,</text>
+<text x="790" y="545" font-size="11.5" fill="#94a3b8">traverse dependencies, simulate deletion,</text>
+<text x="790" y="565" font-size="11.5" fill="#94a3b8">and record status to DynamoDB + S3.</text>
+
+</svg>

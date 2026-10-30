@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+<style>
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .bold { font-weight: 700; }
+  .extrabold { font-weight: 800; }
+  .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+</style>
+
+<rect width="1280" height="720" fill="#ffffff" />
+<rect width="1280" height="44" fill="#1a2735" />
+<text x="20" y="28" font-size="16" font-weight="800" fill="#ec7211">aws <tspan fill="#ffffff" font-weight="500">IAM Management Console</tspan></text>
+<text x="960" y="28" font-size="12" fill="#ffffff">Global  |  traceproof-research (222308824293)</text>
+
+<rect y="44" width="1280" height="38" fill="#232f3e" />
+<text x="32" y="68" font-size="13" fill="#d5dbdb">Roles &gt; ApiFunctionRole &gt; Permissions &gt; GranularLeastPrivilege</text>
+
+<text x="40" y="130" font-size="22" font-weight="700" fill="#16191f">Least-Privilege Policy: Scoped ARNs &amp; Zero Wildcard Actions</text>
+<text x="40" y="152" font-size="12.5" fill="#545b64">Guarantees synthetic deletion simulations cannot delete physical cloud records or infrastructure.</text>
+
+<!-- JSON Box -->
+<rect x="40" y="180" width="1200" height="480" rx="8" fill="#0f172a" stroke="#334155" />
+<text x="70" y="220" font-family="monospace" font-size="13" fill="#f8fafc">{</text>
+<text x="90" y="245" font-family="monospace" font-size="13" fill="#f472b6">"Version"</text><text x="175" y="245" font-family="monospace" font-size="13" fill="#f8fafc">: </text><text x="195" y="245" font-family="monospace" font-size="13" fill="#38bdf8">"2012-10-17"</text><text x="300" y="245" font-family="monospace" font-size="13" fill="#f8fafc">,</text>
+
+<text x="90" y="275" font-family="monospace" font-size="13" fill="#f472b6">"Statement"</text><text x="190" y="275" font-family="monospace" font-size="13" fill="#f8fafc">: [</text>
+
+<text x="120" y="305" font-family="monospace" font-size="13" fill="#f8fafc">{</text>
+<text x="140" y="330" font-family="monospace" font-size="13" fill="#f472b6">"Sid"</text><text x="180" y="330" font-family="monospace" font-size="13" fill="#f8fafc">: </text><text x="200" y="330" font-family="monospace" font-size="13" fill="#38bdf8">"DynamoDBCrudWithoutDelete"</text><text x="440" y="330" font-family="monospace" font-size="13" fill="#f8fafc">,  </text><text x="460" y="330" font-family="monospace" font-size="12" fill="#94a3b8">// Only Get, Put, Update, Scan - NO DeleteItem</text>
+<text x="140" y="355" font-family="monospace" font-size="13" fill="#f472b6">"Effect"</text><text x="205" y="355" font-family="monospace" font-size="13" fill="#f8fafc">: </text><text x="225" y="355" font-family="monospace" font-size="13" fill="#4ade80">"Allow"</text><text x="290" y="355" font-family="monospace" font-size="13" fill="#f8fafc">,</text>
+<text x="140" y="380" font-family="monospace" font-size="13" fill="#f472b6">"Action"</text><text x="205" y="380" font-family="monospace" font-size="13" fill="#f8fafc">: [</text><text x="225" y="380" font-family="monospace" font-size="13" fill="#38bdf8">"dynamodb:GetItem"</text><text x="390" y="380" font-family="monospace" font-size="13" fill="#f8fafc">, </text><text x="410" y="380" font-family="monospace" font-size="13" fill="#38bdf8">"dynamodb:PutItem"</text><text x="575" y="380" font-family="monospace" font-size="13" fill="#f8fafc">, </text><text x="595" y="380" font-family="monospace" font-size="13" fill="#38bdf8">"dynamodb:UpdateItem"</text><text x="790" y="380" font-family="monospace" font-size="13" fill="#f8fafc">, </text><text x="810" y="380" font-family="monospace" font-size="13" fill="#38bdf8">"dynamodb:Scan"</text><text x="950" y="380" font-family="monospace" font-size="13" fill="#f8fafc">],</text>
+<text x="140" y="405" font-family="monospace" font-size="13" fill="#f472b6">"Resource"</text><text x="230" y="405" font-family="monospace" font-size="13" fill="#f8fafc">: [</text><text x="250" y="405" font-family="monospace" font-size="13" fill="#38bdf8">"arn:aws:dynamodb:ap-south-1:222308824293:table/traceproof-*"</text><text x="820" y="405" font-family="monospace" font-size="13" fill="#f8fafc">]</text>
+<text x="120" y="430" font-family="monospace" font-size="13" fill="#f8fafc">},</text>
+
+<text x="120" y="460" font-family="monospace" font-size="13" fill="#f8fafc">{</text>
+<text x="140" y="485" font-family="monospace" font-size="13" fill="#f472b6">"Sid"</text><text x="180" y="485" font-family="monospace" font-size="13" fill="#f8fafc">: </text><text x="200" y="485" font-family="monospace" font-size="13" fill="#38bdf8">"SQSEnqueueOnly"</text><text x="340" y="485" font-family="monospace" font-size="13" fill="#f8fafc">,  </text><text x="360" y="485" font-family="monospace" font-size="12" fill="#94a3b8">// ApiFunction enqueues jobs but cannot drain them</text>
+<text x="140" y="510" font-family="monospace" font-size="13" fill="#f472b6">"Action"</text><text x="205" y="510" font-family="monospace" font-size="13" fill="#f8fafc">: [</text><text x="225" y="510" font-family="monospace" font-size="13" fill="#38bdf8">"sqs:SendMessage"</text><text x="380" y="510" font-family="monospace" font-size="13" fill="#f8fafc">],</text>
+<text x="140" y="535" font-family="monospace" font-size="13" fill="#f472b6">"Resource"</text><text x="230" y="535" font-family="monospace" font-size="13" fill="#f8fafc">: </text><text x="250" y="535" font-family="monospace" font-size="13" fill="#38bdf8">"arn:aws:sqs:ap-south-1:222308824293:traceproof-deletion-queue"</text>
+<text x="120" y="560" font-family="monospace" font-size="13" fill="#f8fafc">},</text>
+
+<text x="120" y="590" font-family="monospace" font-size="13" fill="#f8fafc">{</text>
+<text x="140" y="615" font-family="monospace" font-size="13" fill="#f472b6">"Sid"</text><text x="180" y="615" font-family="monospace" font-size="13" fill="#f8fafc">: </text><text x="200" y="615" font-family="monospace" font-size="13" fill="#38bdf8">"S3ReportReadPrivate"</text><text x="400" y="615" font-family="monospace" font-size="13" fill="#f8fafc">, </text><text x="420" y="615" font-family="monospace" font-size="12" fill="#94a3b8">// Reads reports for modal inspection</text>
+<text x="140" y="635" font-family="monospace" font-size="13" fill="#f472b6">"Action"</text><text x="205" y="635" font-family="monospace" font-size="13" fill="#f8fafc">: [</text><text x="225" y="635" font-family="monospace" font-size="13" fill="#38bdf8">"s3:GetObject"</text><text x="350" y="635" font-family="monospace" font-size="13" fill="#f8fafc">],</text>
+<text x="140" y="655" font-family="monospace" font-size="13" fill="#f472b6">"Resource"</text><text x="230" y="655" font-family="monospace" font-size="13" fill="#f8fafc">: </text><text x="250" y="655" font-family="monospace" font-size="13" fill="#38bdf8">"arn:aws:s3:::traceproof-reportbucket-voxo2tzgvrze/reports/*"</text>
+<text x="120" y="675" font-family="monospace" font-size="13" fill="#f8fafc">}</text>
+
+</svg>

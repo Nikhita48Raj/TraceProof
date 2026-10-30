@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+<style>
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .bold { font-weight: 700; }
+  .extrabold { font-weight: 800; }
+  .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+</style>
+
+<rect width="1280" height="720" fill="#ffffff" />
+<rect width="1280" height="44" fill="#1a2735" />
+<text x="20" y="28" font-size="16" font-weight="800" fill="#ec7211">aws <tspan fill="#ffffff" font-weight="500">Amazon CloudWatch</tspan></text>
+<text x="960" y="28" font-size="12" fill="#ffffff">ap-south-1 (Mumbai)  |  traceproof-research (222308824293)</text>
+
+<rect y="44" width="1280" height="38" fill="#232f3e" />
+<text x="32" y="68" font-size="13" font-weight="700" fill="#ffffff">Log groups (2)</text>
+<rect x="30" y="80" width="85" height="2" fill="#ec7211" />
+
+<rect x="40" y="105" width="1200" height="40" rx="4" fill="#edf7ed" stroke="#1e4620" />
+<text x="56" y="130" font-size="13" font-weight="700" fill="#1e4620">✓ Retention setting applied: Log events expire automatically after 7 days, maintaining zero storage cost indefinitely.</text>
+
+<text x="40" y="180" font-size="22" font-weight="700" fill="#16191f">Log groups (2)</text>
+<text x="40" y="202" font-size="12.5" fill="#545b64">CloudWatch log groups for TraceProof serverless Lambda execution environments</text>
+
+<rect x="40" y="230" width="1200" height="260" rx="6" fill="#ffffff" stroke="#eaeded" />
+<rect x="40" y="230" width="1200" height="40" fill="#f2f3f3" />
+<text x="60" y="255" font-size="12" font-weight="700" fill="#545b64">Log group name</text>
+<text x="550" y="255" font-size="12" font-weight="700" fill="#545b64">Retention</text>
+<text x="750" y="255" font-size="12" font-weight="700" fill="#545b64">Stored bytes</text>
+<text x="900" y="255" font-size="12" font-weight="700" fill="#545b64">Metric filters</text>
+<text x="1050" y="255" font-size="12" font-weight="700" fill="#545b64">Last event time</text>
+
+<!-- Row 1 -->
+<line x1="40" y1="320" x2="1240" y2="320" stroke="#eaeded" />
+<text x="60" y="295" font-size="13" font-weight="700" fill="#0073bb">/aws/lambda/traceproof-ApiFunction-9N12A7B</text>
+<rect x="550" y="282" width="115" height="20" rx="4" fill="#fef3c7" />
+<text x="558" y="296" font-size="11" font-weight="700" fill="#92400e">7 days (1 week)</text>
+<text x="750" y="295" font-size="12.5" fill="#16191f">18.4 KB</text>
+<text x="900" y="295" font-size="12.5" fill="#16191f">0</text>
+<text x="1050" y="295" font-size="12.5" fill="#545b64">Today, 23:14:02 UTC+5:30</text>
+
+<!-- Row 2 -->
+<text x="60" y="355" font-size="13" font-weight="700" fill="#0073bb">/aws/lambda/traceproof-WorkerFunction-3C98V1L</text>
+<rect x="550" y="342" width="115" height="20" rx="4" fill="#fef3c7" />
+<text x="558" y="356" font-size="11" font-weight="700" fill="#92400e">7 days (1 week)</text>
+<text x="750" y="355" font-size="12.5" fill="#16191f">12.2 KB</text>
+<text x="900" y="355" font-size="12.5" fill="#16191f">0</text>
+<text x="1050" y="355" font-size="12.5" fill="#545b64">Today, 23:14:03 UTC+5:30</text>
+
+</svg>

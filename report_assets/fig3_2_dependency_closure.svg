@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+<style>
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .bold { font-weight: 700; }
+  .extrabold { font-weight: 800; }
+  .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+</style>
+
+<rect width="1280" height="720" fill="#f8fafc" />
+
+<!-- Header -->
+<rect x="40" y="30" width="1200" height="60" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" />
+<text x="65" y="67" font-size="19" font-weight="800" fill="#0f172a">Figure 3.2: Deletion Verification Models: Conventional Baseline vs TraceProof</text>
+<text x="800" y="66" font-size="13" font-weight="600" fill="#64748b">Research Objective: Evaluating Multi-Hop Incomplete Deletion Detection</text>
+
+<!-- Left Card: Baseline -->
+<rect x="40" y="110" width="580" height="570" rx="12" fill="#fffaf0" stroke="#fca5a5" stroke-width="2" />
+<rect x="60" y="130" width="310" height="28" rx="6" fill="#fee2e2" />
+<text x="72" y="149" font-size="13" font-weight="800" fill="#991b1b">Conventional Root-Only Deletion (Baseline)</text>
+<rect x="440" y="130" width="160" height="28" rx="6" fill="#fecaca" />
+<text x="450" y="149" font-size="11" font-weight="800" fill="#b91c1c">100% FALSE NEGATIVES</text>
+
+<text x="60" y="185" font-size="12" fill="#7f1d1d" font-weight="500">Simulates deletion of only the root resource without traversing registered dependents.</text>
+
+<!-- Baseline Nodes -->
+<rect x="70" y="270" width="200" height="85" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="2" />
+<text x="85" y="300" font-size="13" font-weight="800" fill="#991b1b">student_001 (Root)</text>
+<text x="85" y="320" font-size="11" fill="#7f1d1d">Primary Database Record</text>
+<text x="85" y="342" font-size="11" font-weight="800" fill="#dc2626">✓ STATUS: DELETED</text>
+
+<rect x="360" y="210" width="230" height="75" rx="8" fill="#ffedd5" stroke="#f97316" stroke-width="2" stroke-dasharray="4,4" />
+<text x="375" y="238" font-size="13" font-weight="800" fill="#9a3412">attendance_001</text>
+<text x="375" y="256" font-size="11" fill="#7c2d12">Attendance Register Record</text>
+<text x="375" y="274" font-size="11" font-weight="800" fill="#ea580c">⚠ ORPHAN: UNTOUCHED</text>
+
+<rect x="360" y="305" width="230" height="75" rx="8" fill="#ffedd5" stroke="#f97316" stroke-width="2" stroke-dasharray="4,4" />
+<text x="375" y="333" font-size="13" font-weight="800" fill="#9a3412">academic_report_001</text>
+<text x="375" y="351" font-size="11" fill="#7c2d12">Archived PDF Grade Sheet</text>
+<text x="375" y="369" font-size="11" font-weight="800" fill="#ea580c">⚠ ORPHAN: UNTOUCHED</text>
+
+<rect x="360" y="400" width="230" height="75" rx="8" fill="#ffedd5" stroke="#f97316" stroke-width="2" stroke-dasharray="4,4" />
+<text x="375" y="428" font-size="13" font-weight="800" fill="#9a3412">analytics_dataset_001</text>
+<text x="375" y="446" font-size="11" fill="#7c2d12">Derived Analytics Record</text>
+<text x="375" y="464" font-size="11" font-weight="800" fill="#ea580c">⚠ ORPHAN: UNTOUCHED</text>
+
+<!-- Baseline Lines -->
+<line x1="270" y1="300" x2="355" y2="245" stroke="#f87171" stroke-width="2" stroke-dasharray="4,4" />
+<line x1="270" y1="312" x2="355" y2="340" stroke="#f87171" stroke-width="2" stroke-dasharray="4,4" />
+<line x1="270" y1="325" x2="355" y2="435" stroke="#f87171" stroke-width="2" stroke-dasharray="4,4" />
+
+<!-- Baseline Footer -->
+<rect x="60" y="520" width="540" height="135" rx="8" fill="#ffffff" stroke="#fca5a5" stroke-width="1.5" />
+<text x="75" y="545" font-size="13" font-weight="800" fill="#991b1b">Baseline Verification Result:</text>
+<text x="75" y="570" font-size="12" fill="#7f1d1d">• Targets checked: 1 (Root only)</text>
+<text x="75" y="590" font-size="12" fill="#7f1d1d">• Remaining Orphan Targets: 3 (Data persists across downstream stores)</text>
+<text x="75" y="612" font-size="12" font-weight="700" fill="#dc2626">• Flaw: Erroneously reports "Success" when child dependencies fail or persist.</text>
+<text x="75" y="632" font-size="12" font-weight="700" fill="#dc2626">• False Negative Rate: 100.0% across multi-hop dependency topologies.</text>
+
+
+<!-- Right Card: TraceProof -->
+<rect x="660" y="110" width="580" height="570" rx="12" fill="#f0fdf4" stroke="#86efac" stroke-width="2" />
+<rect x="680" y="130" width="310" height="28" rx="6" fill="#dcfce7" />
+<text x="692" y="149" font-size="13" font-weight="800" fill="#166534">Dependency-Aware Verification (TraceProof)</text>
+<rect x="1050" y="130" width="170" height="28" rx="6" fill="#bbf7d0" />
+<text x="1058" y="149" font-size="11" font-weight="800" fill="#15803d">100% INCOMPLETE DETECTED</text>
+
+<text x="680" y="185" font-size="12" fill="#14532d" font-weight="500">Traverses transitive dependency closure, simulates deletion, and verifies every copy.</text>
+
+<!-- TraceProof Nodes -->
+<rect x="690" y="270" width="200" height="85" rx="8" fill="#dcfce7" stroke="#22c55e" stroke-width="2" />
+<text x="705" y="300" font-size="13" font-weight="800" fill="#166534">student_001 (Root)</text>
+<text x="705" y="320" font-size="11" fill="#14532d">Primary Database Record</text>
+<text x="705" y="342" font-size="11" font-weight="800" fill="#15803d">✓ VERIFIED DELETED</text>
+
+<rect x="980" y="210" width="230" height="75" rx="8" fill="#dcfce7" stroke="#22c55e" stroke-width="2" />
+<text x="995" y="238" font-size="13" font-weight="800" fill="#166534">attendance_001</text>
+<text x="995" y="256" font-size="11" fill="#14532d">Attendance Register Record</text>
+<text x="995" y="274" font-size="11" font-weight="800" fill="#15803d">✓ VERIFIED DELETED</text>
+
+<rect x="980" y="305" width="230" height="75" rx="8" fill="#dcfce7" stroke="#22c55e" stroke-width="2" />
+<text x="995" y="333" font-size="13" font-weight="800" fill="#166534">academic_report_001</text>
+<text x="995" y="351" font-size="11" fill="#14532d">Archived PDF Grade Sheet</text>
+<text x="995" y="369" font-size="11" font-weight="800" fill="#15803d">✓ VERIFIED DELETED</text>
+
+<rect x="980" y="400" width="230" height="75" rx="8" fill="#dcfce7" stroke="#22c55e" stroke-width="2" />
+<text x="995" y="428" font-size="13" font-weight="800" fill="#166534">analytics_dataset_001</text>
+<text x="995" y="446" font-size="11" fill="#14532d">Derived Analytics Record</text>
+<text x="995" y="464" font-size="11" font-weight="800" fill="#15803d">✓ VERIFIED DELETED</text>
+
+<!-- TraceProof Lines -->
+<defs>
+  <marker id="arrow-green" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+    <path d="M 0 0 L 7 3.5 L 0 7 Z" fill="#22c55e" />
+  </marker>
+</defs>
+<line x1="890" y1="300" x2="975" y2="245" stroke="#22c55e" stroke-width="2" marker-end="url(#arrow-green)" />
+<line x1="890" y1="312" x2="975" y2="340" stroke="#22c55e" stroke-width="2" marker-end="url(#arrow-green)" />
+<line x1="890" y1="325" x2="975" y2="435" stroke="#22c55e" stroke-width="2" marker-end="url(#arrow-green)" />
+
+<!-- TraceProof Footer -->
+<rect x="680" y="520" width="540" height="135" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5" />
+<text x="695" y="545" font-size="13" font-weight="800" fill="#166534">TraceProof Verification Result:</text>
+<text x="695" y="570" font-size="12" fill="#14532d">• Targets checked: 4 of 4 (Transitive Dependency Closure)</text>
+<text x="695" y="590" font-size="12" fill="#14532d">• Remaining Orphan Targets: 0 (Identifies failures deterministically)</text>
+<text x="695" y="612" font-size="12" font-weight="700" fill="#15803d">• Audit Artifact: Cryptographic JSON report generated &amp; stored in S3.</text>
+<text x="695" y="632" font-size="12" font-weight="700" fill="#15803d">• Incomplete Detection Accuracy: 100.0% • Zero False Negatives.</text>
+
+</svg>

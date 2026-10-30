@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+<style>
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .bold { font-weight: 700; }
+  .extrabold { font-weight: 800; }
+  .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+</style>
+
+<rect width="1280" height="720" fill="#ffffff" />
+<!-- AWS Top Bar -->
+<rect width="1280" height="44" fill="#1a2735" />
+<text x="20" y="28" font-size="16" font-weight="800" fill="#ec7211">aws <tspan fill="#ffffff" font-weight="500">DynamoDB</tspan></text>
+<rect x="240" y="8" width="340" height="28" rx="4" fill="#0b131b" stroke="#414d5c" />
+<text x="255" y="26" font-size="12" fill="#aab7b8">Search tables, items, indexes... [Alt+S]</text>
+<text x="960" y="28" font-size="12" fill="#ffffff">ap-south-1 (Mumbai)  |  traceproof-research (222308824293)</text>
+
+<!-- Sub Navigation -->
+<rect y="44" width="1280" height="38" fill="#232f3e" />
+<text x="32" y="68" font-size="13" font-weight="700" fill="#ffffff">Tables</text>
+<rect x="30" y="80" width="45" height="2" fill="#ec7211" />
+<text x="110" y="68" font-size="13" fill="#d5dbdb">Explore items</text>
+<text x="220" y="68" font-size="13" fill="#d5dbdb">PartiQL editor</text>
+<text x="330" y="68" font-size="13" fill="#d5dbdb">Backups</text>
+<text x="410" y="68" font-size="13" fill="#d5dbdb">Reserved capacity</text>
+
+<!-- Main Area -->
+<text x="40" y="130" font-size="22" font-weight="700" fill="#16191f">Tables (3)</text>
+<text x="40" y="152" font-size="12.5" fill="#545b64">Amazon DynamoDB provisioned tables for TraceProof dependency tracking and experiment engine</text>
+<rect x="1110" y="115" width="130" height="34" rx="4" fill="#ec7211" />
+<text x="1132" y="137" font-size="13" font-weight="700" fill="#ffffff">Create table</text>
+
+<!-- Table Container -->
+<rect x="40" y="180" width="1200" height="490" rx="6" fill="#ffffff" stroke="#eaeded" />
+<!-- Table Filter Bar -->
+<rect x="40" y="180" width="1200" height="48" fill="#fafafa" stroke="#eaeded" />
+<rect x="56" y="190" width="280" height="28" rx="4" fill="#ffffff" stroke="#aab7b8" />
+<text x="68" y="209" font-size="12" fill="#16191f">traceproof-</text>
+<text x="1050" y="210" font-size="12" fill="#545b64">3 of 3 tables matching "traceproof-"</text>
+
+<!-- Table Header -->
+<rect x="40" y="228" width="1200" height="38" fill="#f2f3f3" />
+<text x="60" y="252" font-size="12" font-weight="700" fill="#545b64">Table name</text>
+<text x="360" y="252" font-size="12" font-weight="700" fill="#545b64">Status</text>
+<text x="440" y="252" font-size="12" font-weight="700" fill="#545b64">Partition key</text>
+<text x="600" y="252" font-size="12" font-weight="700" fill="#545b64">Sort key</text>
+<text x="700" y="252" font-size="12" font-weight="700" fill="#545b64">Capacity mode</text>
+<text x="960" y="252" font-size="12" font-weight="700" fill="#545b64">Storage</text>
+<text x="1070" y="252" font-size="12" font-weight="700" fill="#545b64">Item count</text>
+
+<!-- Row 1: ResourceTable -->
+<line x1="40" y1="310" x2="1240" y2="310" stroke="#eaeded" />
+<text x="60" y="288" font-size="13" font-weight="700" fill="#0073bb">traceproof-ResourceTable-1N94F89Z1</text>
+<rect x="360" y="274" width="55" height="20" rx="4" fill="#edf7ed" />
+<text x="368" y="288" font-size="11" font-weight="700" fill="#1e4620">Active</text>
+<text x="440" y="288" font-size="12.5" fill="#16191f">resource_id (String)</text>
+<text x="600" y="288" font-size="12.5" fill="#545b64">-</text>
+<text x="700" y="288" font-size="12.5" fill="#16191f">Provisioned (5 RCU / 5 WCU)</text>
+<text x="960" y="288" font-size="12.5" fill="#16191f">1.4 KB</text>
+<text x="1070" y="288" font-size="12.5" fill="#16191f">6 items</text>
+
+<!-- Row 2: RequestTable -->
+<line x1="40" y1="360" x2="1240" y2="360" stroke="#eaeded" />
+<text x="60" y="338" font-size="13" font-weight="700" fill="#0073bb">traceproof-RequestTable-8KB21LA9</text>
+<rect x="360" y="324" width="55" height="20" rx="4" fill="#edf7ed" />
+<text x="368" y="338" font-size="11" font-weight="700" fill="#1e4620">Active</text>
+<text x="440" y="338" font-size="12.5" fill="#16191f">request_id (String)</text>
+<text x="600" y="338" font-size="12.5" fill="#545b64">-</text>
+<text x="700" y="338" font-size="12.5" fill="#16191f">Provisioned (5 RCU / 5 WCU)</text>
+<text x="960" y="338" font-size="12.5" fill="#16191f">3.2 KB</text>
+<text x="1070" y="338" font-size="12.5" fill="#16191f">4 items</text>
+
+<!-- Row 3: ExperimentTable -->
+<line x1="40" y1="410" x2="1240" y2="410" stroke="#eaeded" />
+<text x="60" y="388" font-size="13" font-weight="700" fill="#0073bb">traceproof-ExperimentTable-3P91X4D</text>
+<rect x="360" y="374" width="55" height="20" rx="4" fill="#edf7ed" />
+<text x="368" y="388" font-size="11" font-weight="700" fill="#1e4620">Active</text>
+<text x="440" y="388" font-size="12.5" fill="#16191f">experiment_id (String)</text>
+<text x="600" y="388" font-size="12.5" fill="#545b64">-</text>
+<text x="700" y="388" font-size="12.5" fill="#16191f">Provisioned (5 RCU / 5 WCU) • TTL Enabled</text>
+<text x="960" y="388" font-size="12.5" fill="#16191f">5.8 KB</text>
+<text x="1070" y="388" font-size="12.5" fill="#16191f">2 items</text>
+
+</svg>

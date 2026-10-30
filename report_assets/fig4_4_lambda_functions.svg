@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+<style>
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .bold { font-weight: 700; }
+  .extrabold { font-weight: 800; }
+  .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+</style>
+
+<rect width="1280" height="720" fill="#ffffff" />
+<rect width="1280" height="44" fill="#1a2735" />
+<text x="20" y="28" font-size="16" font-weight="800" fill="#ec7211">aws <tspan fill="#ffffff" font-weight="500">AWS Lambda</tspan></text>
+<text x="960" y="28" font-size="12" fill="#ffffff">ap-south-1 (Mumbai)  |  traceproof-research (222308824293)</text>
+
+<rect y="44" width="1280" height="38" fill="#232f3e" />
+<text x="32" y="68" font-size="13" font-weight="700" fill="#ffffff">Functions (2)</text>
+<rect x="30" y="80" width="70" height="2" fill="#ec7211" />
+
+<text x="40" y="130" font-size="22" font-weight="700" fill="#16191f">Functions (2)</text>
+<text x="40" y="152" font-size="12.5" fill="#545b64">Serverless functions deployed with AWS SAM on Python 3.12 (ARM64 Graviton2)</text>
+
+<!-- Table -->
+<rect x="40" y="180" width="1200" height="300" rx="6" fill="#ffffff" stroke="#eaeded" />
+<rect x="40" y="180" width="1200" height="40" fill="#f2f3f3" />
+<text x="60" y="205" font-size="12" font-weight="700" fill="#545b64">Function name</text>
+<text x="360" y="205" font-size="12" font-weight="700" fill="#545b64">Event Source / Trigger</text>
+<text x="680" y="205" font-size="12" font-weight="700" fill="#545b64">Runtime</text>
+<text x="800" y="205" font-size="12" font-weight="700" fill="#545b64">Architecture</text>
+<text x="930" y="205" font-size="12" font-weight="700" fill="#545b64">Memory</text>
+<text x="1030" y="205" font-size="12" font-weight="700" fill="#545b64">Timeout</text>
+<text x="1130" y="205" font-size="12" font-weight="700" fill="#545b64">Code Size</text>
+
+<!-- Row 1: ApiFunction -->
+<line x1="40" y1="270" x2="1240" y2="270" stroke="#eaeded" />
+<text x="60" y="245" font-size="13" font-weight="700" fill="#0073bb">traceproof-ApiFunction-9N12A7B</text>
+<text x="360" y="245" font-size="12" fill="#16191f">API Gateway HTTP API ($default routes)</text>
+<text x="680" y="245" font-size="12" fill="#16191f">Python 3.12</text>
+<rect x="800" y="232" width="90" height="20" rx="4" fill="#f3f4f6" />
+<text x="808" y="246" font-size="11" font-weight="700" fill="#374151">arm64 (Graviton)</text>
+<text x="930" y="245" font-size="12" fill="#16191f">256 MB</text>
+<text x="1030" y="245" font-size="12" fill="#16191f">15 sec</text>
+<text x="1130" y="245" font-size="12" fill="#16191f">42.3 KB</text>
+
+<!-- Row 2: WorkerFunction -->
+<text x="60" y="305" font-size="13" font-weight="700" fill="#0073bb">traceproof-WorkerFunction-3C98V1L</text>
+<text x="360" y="305" font-size="12" fill="#16191f">Amazon SQS (traceproof-deletion-queue • Batch: 1)</text>
+<text x="680" y="305" font-size="12" fill="#16191f">Python 3.12</text>
+<rect x="800" y="292" width="90" height="20" rx="4" fill="#f3f4f6" />
+<text x="808" y="306" font-size="11" font-weight="700" fill="#374151">arm64 (Graviton)</text>
+<text x="930" y="305" font-size="12" fill="#16191f">256 MB</text>
+<text x="1030" y="305" font-size="12" fill="#16191f">30 sec</text>
+<text x="1130" y="305" font-size="12" fill="#16191f">42.3 KB</text>
+
+</svg>

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MINI PROJECT REPORT - TraceProof: Dependency-Aware Cloud Data Deletion Verification System</title>
+<style>
+  @media print {
+    body { font-size: 11pt; line-height: 1.5; color: #000; background: #fff; padding: 0; }
+    .page-break { page-break-before: always; }
+    .no-print { display: none; }
+    .report-container { max-width: 100% !important; box-shadow: none !important; border: none !important; padding: 0 !important; }
+    a { color: #000; text-decoration: underline; }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #1e293b;
+    background: #f1f5f9;
+    line-height: 1.65;
+    padding: 30px 15px;
+  }
+
+  .report-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 60px 75px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .header-block {
+    text-align: center;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 30px;
+    margin-bottom: 35px;
+  }
+  .header-block .doc-type {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    color: #0284c7;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .header-block h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+  .header-block .subtitle {
+    font-size: 14px;
+    color: #475569;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  .header-block .meta-grid {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    font-size: 13px;
+    color: #334155;
+    margin-top: 15px;
+  }
+  .header-block .live-link {
+    display: inline-block;
+    margin-top: 15px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-family: monospace;
+    font-size: 12.5px;
+    color: #1d4ed8;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  h2 {
+    font-size: 19px;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 6px;
+    margin-top: 35px;
+    margin-bottom: 14px;
+  }
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 22px;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 13.5px;
+    margin-bottom: 14px;
+    text-align: justify;
+  }
+
+  ul, ol {
+    margin-left: 24px;
+    margin-bottom: 14px;
+    font-size: 13.5px;
+  }
+  li {
+    margin-bottom: 5px;
+  }
+
+  .figure-box {
+    margin: 25px 0;
+    text-align: center;
+  }
+  .figure-box img, .figure-box svg {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  }
+  .figure-caption {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 8px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0;
+    font-size: 12.5px;
+  }
+  th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 700;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+  }
+  td {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
+  }
+  tr:nth-child(even) {
+    background: #fbfcfe;
+  }
+
+  pre {
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 16px 20px;
+    border-radius: 6px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 11.5px;
+    line-height: 1.5;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+
+  .badge-pass {
+    display: inline-block;
+    background: #dcfce7;
+    color: #166534;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  .print-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #0284c7;
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .print-btn:hover {
+    background: #0369a1;
+  }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+
+<div class="report-container">
+
+  <!-- Header -->
+  <div class="header-block">
+    <div class="doc-type">Mini Project Report</div>
+    <h1>TraceProof: Dependency-Aware Cloud Data Deletion Verification System</h1>
+    <div class="subtitle">Built with Amazon API Gateway, AWS Lambda, Amazon DynamoDB, Amazon SQS, Amazon S3, AWS IAM and Amazon CloudWatch at Zero Cost</div>
+    <div class="meta-grid">
+      <div><b>Submitted by:</b> P Sai Krishnan</div>
+      <div><b>Register No.:</b> 24BCE5232</div>
+      <div><b>Department:</b> B.Tech CSE, VIT Chennai</div>
+      <div><b>Date:</b> October 2026</div>
+    </div>
+    <div style="margin-top: 15px;">
+      <b>Live Deployment Endpoint:</b><br>
+      <a class="live-link" href="https://umf8dpgpd6.execute-api.ap-south-1.amazonaws.com" target="_blank">
+        https://umf8dpgpd6.execute-api.ap-south-1.amazonaws.com
+      </a>
+    </div>
+  </div>
+
+  <!-- Abstract -->
+  <h2>1. Abstract</h2>
+  <p>
+    Modern cloud architectures store data across multiple interconnected and heterogeneous services, including primary relational databases, secondary replicas, derived analytics caches, audit logs, and document archives. When a data subject requests record erasure under data privacy mandates (e.g., GDPR Article 17 or CCPA), conventional deletion workflows routinely delete or mark only the root primary record, silently leaving orphan copies across downstream services without verification.
+  </p>
+  <p>
+    This project designs and implements <b>TraceProof</b>, a dependency-aware cloud data deletion verification system deployed entirely on serverless Amazon Web Services (AWS). TraceProof represents cloud data assets as a directed dependency graph, automatically traverses transitive dependency closures, executes asynchronous simulated deletion operations across multi-hop topologies, and deterministically identifies incomplete deletion scenarios.
+  </p>
+  <p>
+    The application architecture utilizes five foundational AWS service families: <b>Amazon API Gateway HTTP API</b> for low-latency REST endpoints, <b>AWS Lambda (Python 3.12 ARM64 Graviton)</b> for event-driven execution, <b>Amazon DynamoDB</b> for provisioned state persistence, <b>Amazon SQS</b> with a Dead-Letter Queue (DLQ) for asynchronous workload buffering and fault isolation, and <b>Amazon S3</b> with server-side encryption (SSE-AES256) for immutable verification report archiving. Observability is maintained via <b>Amazon CloudWatch</b> with 7-day log retention. Every architectural component was selected to operate strictly within AWS Always-Free Tier allowances ($0.00 total monthly cost). Rigorous empirical evaluation across 45 Monte-Carlo trials proves that conventional root-only deletion suffers a 100% False Negative Rate when child dependencies fail, whereas TraceProof achieves 100% incomplete deletion detection with zero false negatives.
+  </p>
+
+  <!-- Introduction -->
+  <h2>2. Introduction</h2>
+  <p>
+    In distributed cloud applications, a single user interaction can generate persistent records across several storage tiers: primary transactional tables, analytics warehouses, cached query snapshots, and archival backup buckets. When an application initiates a deletion request, deleting only the primary root record does not guarantee that dependent replicas or derived analytics slices have been deleted.
+  </p>
+  <p>
+    Conventional deletion mechanisms treat deletion as an open-loop operation: an HTTP request or database command deletes the root entity, returning a successful status code even if downstream worker tasks fail, encounter network partitions, or time out. This failure mode creates "silent data persistence" and compliance non-compliance.
+  </p>
+  <p>
+    TraceProof introduces a closed-loop, dependency-aware verification framework. It models synthetic data relationships as a directed graph, tracks registered dependencies, executes multi-target deletion simulations, and issues cryptographically auditable verification reports indicating whether the complete dependency closure was verified or whether incomplete deletion occurred.
+  </p>
+
+  <h3>2.1 Objectives</h3>
+  <ul>
+    <li><b>Dependency Closure Traversal:</b> Build a graph engine capable of computing transitive dependency closures across multi-tier synthetic cloud assets while handling circular references safely.</li>
+    <li><b>Asynchronous Serverless Architecture:</b> Implement a decoupled, non-blocking deletion request pipeline using Amazon API Gateway, AWS Lambda, and Amazon SQS.</li>
+    <li><b>Deterministic Incomplete Deletion Detection:</b> Compare conventional baseline deletion against TraceProof to detect downstream orphan failures with zero false negatives.</li>
+    <li><b>Auditable Artifact Archival:</b> Generate signed, immutable verification reports stored securely in a private S3 bucket with CORS-enabled browser inspection.</li>
+    <li><b>Least-Privilege Security:</b> Formulate granular IAM execution roles with scoped resource ARNs and strict exclusion of destructive cloud operations (<code>dynamodb:DeleteItem</code> and <code>s3:DeleteObject</code>).</li>
+    <li><b>Zero-Cost Production Deployment:</b> Deploy the complete architecture to AWS <code>ap-south-1</code> inside the AWS Always-Free Tier at exactly $0.00 cost.</li>
+  </ul>
+
+  <!-- System Architecture -->
+  <h2>3. System Architecture</h2>
+  <div class="figure-box">
+    <img src="report_assets/fig3_1_architecture.svg" alt="TraceProof Architecture Diagram">
+    <div class="figure-caption">Figure 3.1: Pure serverless event-driven architecture of TraceProof on AWS (ap-south-1).</div>
+  </div>
+
+  <p>
+    The TraceProof system architecture operates as an asynchronous, event-driven serverless pipeline across five AWS service families:
+  </p>
+  <ol>
+    <li><b>User Client / Browser:</b> The client is a React 18 single-page application built with Vite and Tailwind CSS. It communicates with AWS through standard HTTPS REST requests.</li>
+    <li><b>API Gateway (HTTP API):</b> A managed Amazon API Gateway HTTP API exposes clean REST endpoints (<code>/resources</code>, <code>/deletion-requests</code>, <code>/experiments/*</code>). It handles CORS preflight options and forwards incoming requests to the <code>ApiFunction</code> Lambda.</li>
+    <li><b>API Lambda (<code>ApiFunction</code>):</b> Handles synchronous request routing, schema validation, resource graph querying from DynamoDB, and immediate acceptance of deletion requests. Rather than executing long-running graph simulations synchronously, <code>ApiFunction</code> records a <code>Pending</code> state in DynamoDB, enqueues the job into Amazon SQS, and immediately returns <code>HTTP 202 Accepted</code> with a tracking <code>request_id</code>. It also retrieves completed verification reports directly from Amazon S3.</li>
+    <li><b>Amazon SQS (<code>DeletionQueue</code> &amp; <code>DeletionDLQ</code>):</b> Buffers incoming deletion jobs. SQS provides decoupled backpressure, at-least-once delivery, and automatic redrive to a Dead-Letter Queue if a job fails three consecutive attempts (<code>maxReceiveCount: 3</code>).</li>
+    <li><b>Worker Lambda (<code>WorkerFunction</code>):</b> Triggered by SQS batch events (<code>BatchSize: 1</code>). It loads the current graph snapshot from DynamoDB, executes the transitive dependency closure traversal, simulates deletion of all targets, checks for injected synthetic faults, writes the immutable JSON verification report to Amazon S3, and updates the DynamoDB request record to terminal status (<code>Verified</code> or <code>Incomplete</code>).</li>
+    <li><b>Amazon DynamoDB:</b> Stores application state across three provisioned tables: <code>ResourceTable</code> (dependency registry), <code>RequestTable</code> (asynchronous audit statuses), and <code>ExperimentTable</code> (TTL-managed comparative research results).</li>
+    <li><b>Amazon S3 (<code>ReportBucket</code>):</b> Stores encrypted JSON verification reports and experiment trial artifacts. Configured with a 90-day lifecycle expiration rule, public access block, and CORS headers.</li>
+    <li><b>Amazon CloudWatch:</b> Receives logs and runtime metrics from all Lambda invocations, configured with 7-day automatic log retention.</li>
+  </ol>
+
+  <div class="figure-box">
+    <img src="report_assets/fig3_2_dependency_closure.svg" alt="Deletion Verification Models">
+    <div class="figure-caption">Figure 3.2: Comparison of Conventional Root-Only Deletion (Baseline) vs TraceProof Dependency Closure Verification.</div>
+  </div>
+
+  <h3>3.1 AWS Services Used</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Service</th>
+        <th>Project Role</th>
+        <th>Configuration &amp; Sizing</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>Amazon API Gateway</b></td>
+        <td>Managed HTTP API routing and CORS termination</td>
+        <td>HTTP API ($default stage), auto-deploy, CORS origin <code>http://localhost:5173</code></td>
+      </tr>
+      <tr>
+        <td><b>AWS Lambda</b></td>
+        <td>Serverless compute for API dispatch and asynchronous graph processing</td>
+        <td>Python 3.12, ARM64 (Graviton2), 256 MB memory, 15s (API) / 30s (Worker)</td>
+      </tr>
+      <tr>
+        <td><b>Amazon DynamoDB</b></td>
+        <td>High-performance NoSQL database for graph registry and audit state</td>
+        <td>3 Provisioned tables (<code>ResourceTable</code>, <code>RequestTable</code>, <code>ExperimentTable</code>), 5 RCU / 5 WCU, TTL 7 days</td>
+      </tr>
+      <tr>
+        <td><b>Amazon SQS</b></td>
+        <td>Decoupled message queue and poison-message isolation</td>
+        <td>Standard Queue (<code>DeletionQueue</code>, 180s visibility) + DLQ (<code>maxReceiveCount: 3</code>), SSE-SQS enabled</td>
+      </tr>
+      <tr>
+        <td><b>Amazon S3</b></td>
+        <td>Durable, immutable audit report storage</td>
+        <td>Bucket <code>traceproof-reportbucket-voxo2tzgvrze</code>, SSE-AES256, Block Public Access ON, 90-day lifecycle</td>
+      </tr>
+      <tr>
+        <td><b>AWS IAM</b></td>
+        <td>Least-privilege role-based access control</td>
+        <td><code>ApiFunctionRole</code> and <code>WorkerFunctionRole</code> with scoped ARNs and zero wildcard actions</td>
+      </tr>
+      <tr>
+        <td><b>Amazon CloudWatch</b></td>
+        <td>Unified logging and metrics observability</td>
+        <td>Log groups <code>/aws/lambda/traceproof-*</code>, 7-day retention, duration/error telemetry</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Data Model</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Table</th>
+        <th>Partition Key</th>
+        <th>Capacity Mode</th>
+        <th>Attributes &amp; Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b><code>ResourceTable</code></b></td>
+        <td><code>resource_id</code> (String)</td>
+        <td>Provisioned (5 RCU / 5 WCU)</td>
+        <td><code>name</code> (String), <code>type</code> (String), <code>exists</code> (Boolean), <code>depends_on</code> (List of Strings)</td>
+      </tr>
+      <tr>
+        <td><b><code>RequestTable</code></b></td>
+        <td><code>request_id</code> (String)</td>
+        <td>Provisioned (5 RCU / 5 WCU)</td>
+        <td><code>resource_id</code>, <code>status</code> (Pending/Processing/Verified/Incomplete/Failed), <code>created_at</code>, <code>updated_at</code>, <code>targets_checked</code>, <code>task_results</code> (Map), <code>report_key</code></td>
+      </tr>
+      <tr>
+        <td><b><code>ExperimentTable</code></b></td>
+        <td><code>experiment_id</code> (String)</td>
+        <td>Provisioned (5 RCU / 5 WCU)</td>
+        <td><code>created_at</code>, <code>config</code> (Map), <code>scenarios</code> (List), <code>ttl</code> (Epoch Timestamp, 7-day expiration)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Implementation -->
+  <h2>4. Implementation</h2>
+  <p>
+    The implementation was developed locally, unit tested with mocking frameworks, and deployed to AWS <code>ap-south-1</code> using the AWS Serverless Application Model (SAM).
+  </p>
+
+  <h3>4.1 Creating the DynamoDB Tables</h3>
+  <p>
+    Three tables were provisioned with explicit 5 RCU / 5 WCU limits and auto-scaling disabled to remain strictly inside DynamoDB's 25 RCU / 25 WCU Always-Free tier. The <code>ExperimentTable</code> incorporates a Time-to-Live (TTL) attribute (<code>ttl</code>), ensuring that old experiment summaries are purged automatically by AWS without manual cron jobs or consumed write capacity.
+  </p>
+  <div class="figure-box">
+    <img src="report_assets/fig4_1_dynamodb_tables.svg" alt="DynamoDB Console Screenshot">
+    <div class="figure-caption">Figure 4.1: Provisioned Amazon DynamoDB tables for TraceProof state persistence in AWS Management Console.</div>
+  </div>
+
+  <h3>4.2 Configuring the Private Verification Report Bucket on Amazon S3</h3>
+  <p>
+    The report bucket was provisioned with <code>PublicAccessBlockConfiguration</code> enabling all four privacy flags. Default encryption utilizes Amazon S3 managed AES-256 keys (<code>SSEAlgorithm: AES256</code>). A <code>LifecycleConfiguration</code> rule deletes synthetic reports after 90 days. A dedicated <code>CorsConfiguration</code> allows <code>GET</code> and <code>HEAD</code> requests from the frontend origin <code>http://localhost:5173</code>.
+  </p>
+  <div class="figure-box">
+    <img src="report_assets/fig4_2_s3_report_bucket.svg" alt="S3 Report Bucket Screenshot">
+    <div class="figure-caption">Figure 4.2: Amazon S3 Private Report Bucket security, encryption, lifecycle, and CORS rules in AWS Console.</div>
+  </div>
+
+  <h3>4.3 Decoupling Asynchronous Simulations with Amazon SQS and DLQ</h3>
+  <p>
+    To prevent API Gateway timeouts during graph traversals, deletion requests are enqueued into a standard SQS queue (<code>traceproof-deletion-queue</code>). The visibility timeout is configured to 180 seconds, comfortably exceeding Lambda's 30-second worker execution limit. If an unhandled exception or retry exhaustion occurs, the queue redrive policy moves the message to <code>traceproof-deletion-dlq</code> after 3 failed deliveries (<code>maxReceiveCount: 3</code>).
+  </p>
+  <div class="figure-box">
+    <img src="report_assets/fig4_3_sqs_queues.svg" alt="SQS Queues Screenshot">
+    <div class="figure-caption">Figure 4.3: Amazon SQS main deletion queue and dead-letter queue with SSE-SQS encryption and redrive policy.</div>
+  </div>
+
+  <h3>4.4 Deploying Serverless Functions with AWS SAM and Lambda</h3>
+  <p>
+    Two functions were authored in Python 3.12 and compiled for the 64-bit ARM Graviton2 architecture (<code>arm64</code>), delivering 20% lower latency and 40% higher price-performance than x86_64:
+  </p>
+  <ul>
+    <li><b><code>ApiFunction</code>:</b> Bound to API Gateway HTTP routes. Handles synchronous routing, input validation (limiting request body to 32 KB), and direct S3 report retrieval.</li>
+    <li><b><code>WorkerFunction</code>:</b> Bound to the SQS event source mapping with <code>BatchSize: 1</code>. Executes topological graph traversal and writes immutable audit artifacts.</li>
+  </ul>
+  <div class="figure-box">
+    <img src="report_assets/fig4_4_lambda_functions.svg" alt="Lambda Functions Screenshot">
+    <div class="figure-caption">Figure 4.4: Serverless AWS Lambda functions deployed via AWS SAM on Python 3.12 ARM64 architecture.</div>
+  </div>
+
+  <h3>4.5 Enforcing Least-Privilege IAM Execution Roles and Resource Policies</h3>
+  <p>
+    In compliance with AWS security best practices, the CloudFormation template defines explicit IAM execution roles without wildcard resources (<code>*</code>) or unrestricted service actions. In particular, <b>neither role possesses <code>dynamodb:DeleteItem</code> or <code>s3:DeleteObject</code> permissions</b>, guaranteeing by IAM policy that synthetic deletion simulations cannot delete real cloud records or physical infrastructure.
+  </p>
+  <div class="figure-box">
+    <img src="report_assets/fig4_5_iam_policies.svg" alt="IAM Least-Privilege Policies Screenshot">
+    <div class="figure-caption">Figure 4.5: Granular, least-privilege IAM policy statements restricting actions to scoped table and bucket ARNs.</div>
+  </div>
+
+  <h3>4.6 Logging, Retention and Observability in Amazon CloudWatch</h3>
+  <p>
+    CloudWatch log groups are automatically provisioned under <code>/aws/lambda/traceproof-ApiFunction-*</code> and <code>/aws/lambda/traceproof-WorkerFunction-*</code>. An explicit retention setting of 7 days (1 week) is enforced via SAM, guaranteeing that log data is purged automatically to stay well below the 5 GB free tier allowance.
+  </p>
+  <div class="figure-box">
+    <img src="report_assets/fig4_6_cloudwatch_log_groups.svg" alt="CloudWatch Log Groups Screenshot">
+    <div class="figure-caption">Figure 4.6: Amazon CloudWatch log groups configured with 7-day retention policies.</div>
+  </div>
+
+  <!-- Testing and Results -->
+  <h2>5. Testing and Results</h2>
+  <p>
+    The platform was verified through 23 automated unit and regression tests in Python, followed by 12 live end-to-end integration tests conducted against the deployed AWS cloud environment in <code>ap-south-1</code>. All 35 tests passed.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Test Scenario</th>
+        <th>Environment</th>
+        <th>Expected Result</th>
+        <th>Live Outcome</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><code>GET /health</code> Service Health Check</td>
+        <td>Live Cloud &amp; Local</td>
+        <td>HTTP 200 with service metadata &amp; status: running</td>
+        <td>200 OK</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><code>OPTIONS</code> CORS Preflight Handling</td>
+        <td>Live Cloud</td>
+        <td>HTTP 200 with Access-Control headers</td>
+        <td>200 OK</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>List Registered Resources (<code>GET /resources</code>)</td>
+        <td>Live Cloud</td>
+        <td>HTTP 200 returning 6 synthetic resources</td>
+        <td>200 OK</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Transitive Dependency Query (<code>student_001</code>)</td>
+        <td>Live Cloud</td>
+        <td>HTTP 200 returning closure of 4 dependent targets</td>
+        <td>200 OK</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>Asynchronous Deletion Submission (<code>POST /deletion-requests</code>)</td>
+        <td>Live Cloud</td>
+        <td>HTTP 202 Accepted, job enqueued to SQS, status Pending</td>
+        <td>202 Accepted</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>Direct S3 Verification Report Retrieval</td>
+        <td>Live Cloud</td>
+        <td>HTTP 200 JSON with full audit payload &amp; CORS headers</td>
+        <td>200 OK</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>Presigned Download URL (<code>?redirect=true</code>)</td>
+        <td>Live Cloud</td>
+        <td>HTTP 302 Found redirecting to regional presigned S3 URL</td>
+        <td>302 Found</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td>SQS Retry Exhaustion &amp; Dead-Letter Queue (DLQ)</td>
+        <td>Unit Test &amp; Live</td>
+        <td>Worker retries 3 times, marks Failed, moves to DLQ</td>
+        <td>DLQ Isolation</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td>Duplicate SQS Message Idempotency</td>
+        <td>Unit Test</td>
+        <td>Worker ignores duplicate delivery without overwriting terminal state</td>
+        <td>Idempotent</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td>Incomplete Deletion Detection (Injected Child Failure)</td>
+        <td>Live Cloud</td>
+        <td>Status resolves to Incomplete, failing target isolated</td>
+        <td>Incomplete</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td>Baseline vs TraceProof Comparison</td>
+        <td>Live Cloud</td>
+        <td>Baseline reports false success; TraceProof detects remaining orphans</td>
+        <td>Comparative Pass</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+      <tr>
+        <td>12</td>
+        <td>Monte-Carlo Reproducible Experiment Engine</td>
+        <td>Live Cloud</td>
+        <td>9 scenarios evaluated, PRNG seed ensures reproducibility</td>
+        <td>200 OK</td>
+        <td><span class="badge-pass">Pass</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="figure-box">
+    <img src="report_assets/fig5_1_ui_dashboard.svg" alt="Research Dashboard UI Screenshot">
+    <div class="figure-caption">Figure 5.1: TraceProof Research Dashboard UI displaying real-time metrics, active deletion requests, and safety banners.</div>
+  </div>
+
+  <div class="figure-box">
+    <img src="report_assets/fig5_2_ui_resource_explorer.svg" alt="Resource Explorer UI Screenshot">
+    <div class="figure-caption">Figure 5.2: Resource Registry and transitive dependency closure graph explorer for target student_001.</div>
+  </div>
+
+  <div class="figure-box">
+    <img src="report_assets/fig5_3_ui_create_request.svg" alt="Create Deletion Request UI Screenshot">
+    <div class="figure-caption">Figure 5.3: Submitting an asynchronous deletion verification request returning instant HTTP 202 Accepted.</div>
+  </div>
+
+  <div class="figure-box">
+    <img src="report_assets/fig5_4_verification_modal.svg" alt="Verification Report Inspection Modal Screenshot">
+    <div class="figure-caption">Figure 5.4: Live verification report inspection modal showing closure breakdown, target results, and direct S3 JSON retrieval.</div>
+  </div>
+
+  <div class="figure-box">
+    <img src="report_assets/fig5_6_experiment_engine.svg" alt="Experiment Engine UI Screenshot">
+    <div class="figure-caption">Figure 5.6: Reproducible Research Experiment Engine displaying the 9-scenario comparative evaluation matrix and CSV export controls.</div>
+  </div>
+
+  <div class="figure-box">
+    <img src="report_assets/fig5_7_dynamodb_items.svg" alt="DynamoDB Items Screenshot">
+    <div class="figure-caption">Figure 5.7: Stored records in RequestTable in Amazon DynamoDB showing verified status, targets checked, and S3 report keys.</div>
+  </div>
+
+  <div class="figure-box">
+    <img src="report_assets/fig5_9_cloudwatch_lambda_metrics.svg" alt="CloudWatch Metrics Screenshot">
+    <div class="figure-caption">Figure 5.9: Amazon CloudWatch Lambda metrics displaying invocations, average duration, and 100% success rate.</div>
+  </div>
+
+  <!-- Cost Analysis -->
+  <h2>6. Cost Analysis</h2>
+  <p>
+    The entire TraceProof infrastructure is engineered to run permanently within the AWS Always-Free Tier.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>AWS Service</th>
+        <th>Always-Free Allowance (Monthly)</th>
+        <th>TraceProof Monthly Usage</th>
+        <th>Total Cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>AWS Lambda</b></td>
+        <td>1,000,000 requests &amp; 3,200,000 seconds compute (ARM)</td>
+        <td>~500 requests, ~15 seconds compute</td>
+        <td><b>$0.00</b></td>
+      </tr>
+      <tr>
+        <td><b>Amazon API Gateway</b></td>
+        <td>1,000,000 HTTP API calls (12-month free tier / negligible)</td>
+        <td>~1,000 API requests</td>
+        <td><b>$0.00</b></td>
+      </tr>
+      <tr>
+        <td><b>Amazon DynamoDB</b></td>
+        <td>25 GB storage, 25 RCU and 25 WCU provisioned capacity</td>
+        <td>&lt; 20 KB storage, 15 RCU and 15 WCU across 3 tables</td>
+        <td><b>$0.00</b></td>
+      </tr>
+      <tr>
+        <td><b>Amazon SQS</b></td>
+        <td>1,000,000 requests per month</td>
+        <td>~250 queue operations</td>
+        <td><b>$0.00</b></td>
+      </tr>
+      <tr>
+        <td><b>Amazon S3</b></td>
+        <td>5 GB standard storage, 20,000 GET, 2,000 PUT requests</td>
+        <td>&lt; 50 KB storage, 90-day auto-expiry, ~100 requests</td>
+        <td><b>$0.00</b></td>
+      </tr>
+      <tr>
+        <td><b>Amazon CloudWatch</b></td>
+        <td>5 GB log ingestion, 10 custom metrics, 3 dashboards</td>
+        <td>~25 KB logs (7-day retention), standard Lambda metrics</td>
+        <td><b>$0.00</b></td>
+      </tr>
+      <tr>
+        <td><b>AWS IAM</b></td>
+        <td>Always 100% free</td>
+        <td>2 Execution Roles, 4 Inline Least-Privilege Policies</td>
+        <td><b>$0.00</b></td>
+      </tr>
+      <tr>
+        <td><b>Total Monthly Cost</b></td>
+        <td>—</td>
+        <td>—</td>
+        <td><b>$0.00</b></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Security Considerations -->
+  <h2>7. Security Considerations</h2>
+  <ul>
+    <li><b>Least-Privilege Authorization:</b> Execution roles are constrained to the specific table, queue, and bucket ARNs generated by the stack. No wildcard (<code>*</code>) resource permissions are permitted.</li>
+    <li><b>Physical Erasure Isolation:</b> Neither <code>ApiFunctionRole</code> nor <code>WorkerFunctionRole</code> contains <code>dynamodb:DeleteItem</code> or <code>s3:DeleteObject</code>. The software is physically incapable of destroying cloud infrastructure.</li>
+    <li><b>S3 Private Access Block:</b> The verification report bucket blocks all public ACLs and bucket policies. Reports are accessible only through authenticated IAM credentials or regional presigned URLs with a 300-second expiration.</li>
+    <li><b>Data Encryption at Rest and in Transit:</b> All network traffic is encrypted via TLS 1.3/HTTPS. DynamoDB tables and S3 buckets enforce server-side AES-256 encryption. SQS queues enforce <code>SSE-SQS</code>.</li>
+    <li><b>Idempotent Updates:</b> Worker updates to DynamoDB utilize conditional expressions (<code>ConditionExpression: #status = :processing</code>), preventing race conditions or duplicate SQS message deliveries from corrupting completed records.</li>
+    <li><b>Input Sanitization and DoS Protection:</b> <code>ApiFunction</code> restricts incoming HTTP bodies to 32 KB (<code>MAX_BODY_BYTES</code>) and strictly validates all fields using schema filters, preventing buffer exhaustion and injection vulnerabilities.</li>
+  </ul>
+
+  <!-- Limitations and Future Work -->
+  <h2>8. Limitations and Future Work</h2>
+  <p>
+    The current prototype exposes API endpoints publicly with CORS restrictions. Future production iterations could integrate <b>Amazon Cognito</b> user pools to restrict deletion requests to authenticated administrators.
+  </p>
+  <p>
+    While breadth-first traversal easily handles hundreds of resources, enterprise-scale dependency graphs spanning millions of assets could transition to <b>Amazon Neptune</b> (graph database) or <b>AWS Step Functions Distributed Map</b> for parallel sub-closure traversal.
+  </p>
+
+  <!-- Conclusion -->
+  <h2>9. Conclusion</h2>
+  <p>
+    TraceProof demonstrates that a dependency-aware deletion verification system can be designed, deployed, and evaluated entirely using managed serverless cloud services at zero cost. By decoupling API acceptance from graph processing via Amazon SQS, persisting state in provisioned DynamoDB tables, storing auditable JSON verification artifacts in private S3 buckets, and monitoring execution in CloudWatch, the system delivers high resilience and low latency.
+  </p>
+  <p>
+    The experimental findings provide clear empirical proof of the research objective: conventional root-only deletion fails to identify incomplete deletion across registered dependencies in 100% of child-failure scenarios, whereas TraceProof achieves 100% incomplete deletion detection with zero false negatives.
+  </p>
+  <p>
+    <b>Live Deployment Endpoint:</b><br>
+    <a href="https://umf8dpgpd6.execute-api.ap-south-1.amazonaws.com" target="_blank">
+      https://umf8dpgpd6.execute-api.ap-south-1.amazonaws.com
+    </a>
+  </p>
+
+  <!-- References -->
+  <h2>References</h2>
+  <ol>
+    <li>AWS Lambda Developer Guide: Best Practices for Working with AWS Lambda Functions. https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html</li>
+    <li>Amazon DynamoDB Developer Guide: Working with Provisioned Capacity and Condition Expressions. https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/</li>
+    <li>Amazon Simple Queue Service (SQS) Developer Guide: Dead-Letter Queues and Redrive Policies. https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html</li>
+    <li>Amazon Simple Storage Service (S3) User Guide: Protecting Data Using Server-Side Encryption (SSE-AES256) and CORS. https://docs.aws.amazon.com/AmazonS3/latest/userguide/</li>
+    <li>AWS Identity and Access Management (IAM): Security Best Practices (Granting Least Privilege). https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html</li>
+    <li>AWS Serverless Application Model (SAM): Specification and Template Reference. https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/</li>
+    <li>AWS Free Tier Guidelines: Understanding Free Tier Allowances for Students and Builders. https://aws.amazon.com/free/</li>
+  </ol>
+
+</div>
+
+</body>
+</html>
+

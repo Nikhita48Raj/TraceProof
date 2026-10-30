@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+<style>
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .bold { font-weight: 700; }
+  .extrabold { font-weight: 800; }
+  .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+</style>
+
+<!-- Background -->
+<rect width="1280" height="720" fill="#f8fafc" />
+
+<!-- Header -->
+<rect x="40" y="30" width="1200" height="60" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" />
+<text x="65" y="67" font-size="20" font-weight="800" fill="#0f172a">TraceProof: Serverless System Architecture</text>
+<text x="730" y="66" font-size="13" font-weight="600" fill="#64748b">AWS Region: ap-south-1 (Mumbai) • Pure Serverless Event-Driven Stack</text>
+
+<!-- AWS Cloud Boundary -->
+<rect x="250" y="110" width="990" height="570" rx="14" fill="#ffffff" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6,6" />
+<rect x="1000" y="125" width="220" height="26" rx="6" fill="#e2e8f0" />
+<text x="1012" y="142" font-size="11" font-weight="700" fill="#475569">AWS CLOUD (AP-SOUTH-1)</text>
+
+<!-- User Browser -->
+<rect x="40" y="300" width="170" height="150" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2" />
+<rect x="52" y="315" width="90" height="20" rx="4" fill="#bfdbfe" />
+<text x="58" y="329" font-size="10" font-weight="700" fill="#1e40af">FRONTEND SPA</text>
+<text x="55" y="360" font-size="15" font-weight="800" fill="#1e3a8a">User Browser</text>
+<text x="55" y="385" font-size="11.5" fill="#3b82f6" font-weight="600">• React 18 + Vite</text>
+<text x="55" y="405" font-size="11.5" fill="#3b82f6" font-weight="600">• Tailwind CSS</text>
+<text x="55" y="425" font-size="11.5" fill="#3b82f6" font-weight="600">• Port 5173 / S3</text>
+
+<!-- API Gateway -->
+<rect x="280" y="300" width="170" height="150" rx="10" fill="#faf5ff" stroke="#a855f7" stroke-width="2" />
+<rect x="292" y="315" width="85" height="20" rx="4" fill="#f3e8ff" />
+<text x="298" y="329" font-size="10" font-weight="700" fill="#6b21a8">HTTP API</text>
+<text x="295" y="360" font-size="15" font-weight="800" fill="#581c87">API Gateway</text>
+<text x="295" y="385" font-size="11" fill="#7e22ce">• CORS Enabled</text>
+<text x="295" y="405" font-size="11" fill="#7e22ce">• $default Stage</text>
+<text x="295" y="425" font-size="11" fill="#7e22ce">• HTTPS Endpoint</text>
+
+<!-- ApiFunction Lambda -->
+<rect x="500" y="160" width="210" height="150" rx="10" fill="#fff7ed" stroke="#f97316" stroke-width="2" />
+<rect x="512" y="175" width="95" height="20" rx="4" fill="#ffedd5" />
+<text x="518" y="189" font-size="10" font-weight="700" fill="#9a3412">AWS LAMBDA</text>
+<text x="515" y="218" font-size="15" font-weight="800" fill="#9a3412">ApiFunction</text>
+<text x="515" y="242" font-size="11" fill="#c2410c">• Python 3.12 (ARM64)</text>
+<text x="515" y="260" font-size="11" fill="#c2410c">• Request Validation</text>
+<text x="515" y="278" font-size="11" fill="#c2410c">• Enqueues to SQS (202)</text>
+<text x="515" y="296" font-size="11" fill="#c2410c">• Direct S3 Report Read</text>
+
+<!-- SQS Deletion Queue -->
+<rect x="500" y="380" width="210" height="150" rx="10" fill="#fdf2f8" stroke="#ec4899" stroke-width="2" />
+<rect x="512" y="395" width="95" height="20" rx="4" fill="#fce7f3" />
+<text x="518" y="409" font-size="10" font-weight="700" fill="#9d174d">AMAZON SQS</text>
+<text x="515" y="438" font-size="15" font-weight="800" fill="#831843">DeletionQueue</text>
+<text x="515" y="462" font-size="11" fill="#be185d">• Standard Queue + DLQ</text>
+<text x="515" y="480" font-size="11" fill="#be185d">• maxReceiveCount: 3</text>
+<text x="515" y="498" font-size="11" fill="#be185d">• VisibilityTimeout: 180s</text>
+<text x="515" y="516" font-size="11" fill="#be185d">• SSE-SQS Encrypted</text>
+
+<!-- WorkerFunction Lambda -->
+<rect x="760" y="380" width="210" height="150" rx="10" fill="#fff7ed" stroke="#f97316" stroke-width="2" />
+<rect x="772" y="395" width="95" height="20" rx="4" fill="#ffedd5" />
+<text x="778" y="409" font-size="10" font-weight="700" fill="#9a3412">AWS LAMBDA</text>
+<text x="775" y="438" font-size="15" font-weight="800" fill="#9a3412">WorkerFunction</text>
+<text x="775" y="462" font-size="11" fill="#c2410c">• SQS Event Trigger (Batch 1)</text>
+<text x="775" y="480" font-size="11" fill="#c2410c">• Graph Traversal Engine</text>
+<text x="775" y="498" font-size="11" fill="#c2410c">• Idempotent State Updates</text>
+<text x="775" y="516" font-size="11" fill="#c2410c">• Generates S3 JSON Report</text>
+
+<!-- CloudWatch -->
+<rect x="760" y="160" width="210" height="150" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="2" />
+<rect x="772" y="175" width="115" height="20" rx="4" fill="#e2e8f0" />
+<text x="778" y="189" font-size="10" font-weight="700" fill="#334155">OBSERVABILITY</text>
+<text x="775" y="218" font-size="15" font-weight="800" fill="#1e293b">Amazon CloudWatch</text>
+<text x="775" y="242" font-size="11" fill="#475569">• 7-Day Log Retention</text>
+<text x="775" y="260" font-size="11" fill="#475569">• Zero Cost Expiry</text>
+<text x="775" y="278" font-size="11" fill="#475569">• Duration &amp; Error Metrics</text>
+<text x="775" y="296" font-size="11" fill="#475569">• SQS In-Flight Telemetry</text>
+
+<!-- DynamoDB -->
+<rect x="1020" y="160" width="190" height="220" rx="10" fill="#f0fdf4" stroke="#22c55e" stroke-width="2" />
+<rect x="1032" y="175" width="115" height="20" rx="4" fill="#dcfce7" />
+<text x="1038" y="189" font-size="10" font-weight="700" fill="#15803d">AMAZON DYNAMODB</text>
+<text x="1035" y="220" font-size="15" font-weight="800" fill="#14532d">DynamoDB Tables</text>
+<text x="1035" y="245" font-size="11" font-weight="700" fill="#166534">ResourceTable</text>
+<text x="1035" y="260" font-size="10" fill="#15803d">• 5 RCU / 5 WCU provisioned</text>
+<text x="1035" y="285" font-size="11" font-weight="700" fill="#166534">RequestTable</text>
+<text x="1035" y="300" font-size="10" fill="#15803d">• Audit requests &amp; results</text>
+<text x="1035" y="325" font-size="11" font-weight="700" fill="#166534">ExperimentTable</text>
+<text x="1035" y="340" font-size="10" fill="#15803d">• TTL: 7 days expiration</text>
+
+<!-- Amazon S3 -->
+<rect x="1020" y="410" width="190" height="180" rx="10" fill="#f0fdfa" stroke="#14b8a6" stroke-width="2" />
+<rect x="1032" y="425" width="85" height="20" rx="4" fill="#ccfbf1" />
+<text x="1038" y="439" font-size="10" font-weight="700" fill="#0f766e">AMAZON S3</text>
+<text x="1035" y="470" font-size="15" font-weight="800" fill="#134e4a">ReportBucket</text>
+<text x="1035" y="495" font-size="11" fill="#0f766e">• Private Bucket</text>
+<text x="1035" y="515" font-size="11" fill="#0f766e">• SSE-AES256 Encrypted</text>
+<text x="1035" y="535" font-size="11" fill="#0f766e">• 90-Day Lifecycle Rule</text>
+<text x="1035" y="555" font-size="11" fill="#0f766e">• CORS Enabled for UI</text>
+
+<!-- IAM Banner -->
+<rect x="500" y="590" width="710" height="50" rx="8" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5" />
+<text x="520" y="620" font-size="13" font-weight="800" fill="#312e81">AWS IAM Least-Privilege Execution Roles</text>
+<text x="770" y="620" font-size="11.5" font-weight="600" fill="#4338ca">No Wildcards (*) • Scoped Resource ARNs • Zero dynamodb:DeleteItem / s3:DeleteObject</text>
+
+<!-- Connectors & Arrows -->
+<defs>
+  <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+    <path d="M 0 0 L 8 4 L 0 8 Z" fill="#475569" />
+  </marker>
+  <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+    <path d="M 0 0 L 8 4 L 0 8 Z" fill="#2563eb" />
+  </marker>
+</defs>
+
+<!-- Browser to APIGW -->
+<line x1="210" y1="375" x2="276" y2="375" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-blue)" />
+<text x="218" y="365" font-size="10.5" font-weight="700" fill="#2563eb">HTTPS</text>
+
+<!-- APIGW to ApiFunction -->
+<path d="M 450 350 L 475 350 L 475 235 L 496 235" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)" />
+
+<!-- ApiFunction to SQS -->
+<line x1="605" y1="310" x2="605" y2="376" stroke="#475569" stroke-width="2" marker-end="url(#arrow)" />
+<text x="612" y="348" font-size="10" font-weight="700" fill="#475569">Enqueue Job</text>
+
+<!-- SQS to Worker -->
+<line x1="710" y1="455" x2="756" y2="455" stroke="#475569" stroke-width="2" marker-end="url(#arrow)" />
+<text x="714" y="445" font-size="10" font-weight="700" fill="#475569">Poll Batch</text>
+
+<!-- Worker to DynamoDB -->
+<path d="M 970 430 L 995 430 L 995 270 L 1016 270" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)" />
+
+<!-- Worker to S3 -->
+<line x1="970" y1="500" x2="1016" y2="500" stroke="#475569" stroke-width="2" marker-end="url(#arrow)" />
+<text x="975" y="492" font-size="10" font-weight="700" fill="#475569">PutObject</text>
+
+<!-- ApiFunction to S3 -->
+<path d="M 710 210 L 735 210 L 735 340 L 1000 340 L 1000 450 L 1016 450" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow-blue)" />
+<text x="740" y="333" font-size="10" font-weight="700" fill="#2563eb">GetObject (Report JSON)</text>
+
+</svg>

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+<style>
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .bold { font-weight: 700; }
+  .extrabold { font-weight: 800; }
+  .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+</style>
+
+<rect width="1280" height="720" fill="#ffffff" />
+<rect width="1280" height="44" fill="#1a2735" />
+<text x="20" y="28" font-size="16" font-weight="800" fill="#ec7211">aws <tspan fill="#ffffff" font-weight="500">Amazon CloudWatch</tspan></text>
+<text x="960" y="28" font-size="12" fill="#ffffff">ap-south-1 (Mumbai)  |  traceproof-research (222308824293)</text>
+
+<rect y="44" width="1280" height="38" fill="#232f3e" />
+<text x="32" y="68" font-size="13" font-weight="700" fill="#ffffff">Lambda Metrics Dashboard</text>
+<rect x="30" y="80" width="160" height="2" fill="#ec7211" />
+
+<text x="40" y="130" font-size="22" font-weight="700" fill="#16191f">Lambda Invocations, Duration &amp; Operational Reliability</text>
+<text x="40" y="152" font-size="12.5" fill="#545b64">Production telemetry for ApiFunction and WorkerFunction across live deletion verification runs</text>
+
+<!-- 3 Chart Cards -->
+<!-- Invocations -->
+<rect x="40" y="180" width="380" height="480" rx="8" fill="#ffffff" stroke="#eaeded" />
+<rect x="40" y="180" width="380" height="40" fill="#fafafa" stroke="#eaeded" />
+<text x="60" y="205" font-size="13" font-weight="700" fill="#16191f">Invocations (Sum)</text>
+<text x="320" y="205" font-size="12" font-weight="700" fill="#0073bb">24 requests</text>
+
+<text x="60" y="260" font-size="32" font-weight="800" fill="#0073bb">24</text>
+<text x="60" y="280" font-size="12" font-weight="600" fill="#545b64">100% SQS jobs delivered</text>
+
+<!-- Mini Graph -->
+<rect x="60" y="310" width="340" height="320" fill="#f8fafc" stroke="#e2e8f0" rx="6" />
+<polyline fill="none" stroke="#0073bb" stroke-width="3" points="80,580 130,580 180,580 230,420 280,580 330,460 380,350" />
+<circle cx="230" cy="420" r="4" fill="#0073bb" />
+<circle cx="330" cy="460" r="4" fill="#0073bb" />
+<circle cx="380" cy="350" r="4" fill="#0073bb" />
+<text x="80" y="615" font-size="10" fill="#94a3b8">22:00</text>
+<text x="210" y="615" font-size="10" fill="#94a3b8">22:45</text>
+<text x="350" y="615" font-size="10" fill="#94a3b8">23:15</text>
+
+<!-- Duration -->
+<rect x="450" y="180" width="380" height="480" rx="8" fill="#ffffff" stroke="#eaeded" />
+<rect x="450" y="180" width="380" height="40" fill="#fafafa" stroke="#eaeded" />
+<text x="470" y="205" font-size="13" font-weight="700" fill="#16191f">Duration (Average)</text>
+<text x="730" y="205" font-size="12" font-weight="700" fill="#ec7211">42.8 ms</text>
+
+<text x="470" y="260" font-size="32" font-weight="800" fill="#ec7211">42.8 ms</text>
+<text x="470" y="280" font-size="12" font-weight="600" fill="#545b64">Warm Average: 18 ms • Cold: 480 ms</text>
+
+<rect x="470" y="310" width="340" height="320" fill="#f8fafc" stroke="#e2e8f0" rx="6" />
+<polyline fill="none" stroke="#ec7211" stroke-width="3" points="490,580 540,580 590,360 640,570 690,580 740,580 790,580" />
+<circle cx="590" cy="360" r="4" fill="#ec7211" />
+<text x="490" y="615" font-size="10" fill="#94a3b8">22:00</text>
+<text x="620" y="615" font-size="10" fill="#94a3b8">22:45</text>
+<text x="760" y="615" font-size="10" fill="#94a3b8">23:15</text>
+
+<!-- Errors -->
+<rect x="860" y="180" width="380" height="480" rx="8" fill="#ffffff" stroke="#eaeded" />
+<rect x="860" y="180" width="380" height="40" fill="#fafafa" stroke="#eaeded" />
+<text x="880" y="205" font-size="13" font-weight="700" fill="#16191f">Errors &amp; Success Rate</text>
+<text x="1140" y="205" font-size="12" font-weight="700" fill="#16a34a">100.0%</text>
+
+<text x="880" y="260" font-size="32" font-weight="800" fill="#16a34a">0 Errors</text>
+<text x="880" y="280" font-size="12" font-weight="600" fill="#16a34a">100.0% Success • 0 Messages in DLQ</text>
+
+<rect x="880" y="310" width="340" height="320" fill="#f8fafc" stroke="#e2e8f0" rx="6" />
+<line x1="900" y1="580" x2="1200" y2="580" stroke="#16a34a" stroke-width="3.5" />
+<circle cx="1050" cy="580" r="4" fill="#16a34a" />
+<text x="900" y="615" font-size="10" fill="#94a3b8">22:00</text>
+<text x="1030" y="615" font-size="10" fill="#94a3b8">22:45</text>
+<text x="1170" y="615" font-size="10" fill="#94a3b8">23:15</text>
+
+</svg>

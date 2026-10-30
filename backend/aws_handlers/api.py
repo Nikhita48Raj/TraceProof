@@ -44,14 +44,17 @@ DEFAULT_EXPERIMENT_CONFIG = {
 
 def _runtime_clients():
     import boto3
+    from botocore.config import Config
 
-    dynamodb = boto3.resource("dynamodb")
+    region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
+    dynamodb = boto3.resource("dynamodb", region_name=region)
+    s3_config = Config(region_name=region, signature_version="s3v4", s3={"addressing_style": "virtual"})
     return {
         "resources": dynamodb.Table(os.environ["RESOURCE_TABLE_NAME"]),
         "requests": dynamodb.Table(os.environ["REQUEST_TABLE_NAME"]),
         "experiments": dynamodb.Table(os.environ["EXPERIMENT_TABLE_NAME"]),
-        "sqs": boto3.client("sqs"),
-        "s3": boto3.client("s3"),
+        "sqs": boto3.client("sqs", region_name=region),
+        "s3": boto3.client("s3", region_name=region, config=s3_config),
         "queue_url": os.environ["DELETION_QUEUE_URL"],
         "report_bucket": os.environ["REPORT_BUCKET"],
     }
@@ -195,6 +198,7 @@ def handle_event(event, clients):
     http = event.get("requestContext", {}).get("http", {})
     method = http.get("method", "GET").upper()
     path = event.get("rawPath", "/")
+    query_params = event.get("queryStringParameters") or {}
     body_text = event.get("body") or "{}"
     if event.get("isBase64Encoded"):
         import base64
@@ -303,11 +307,45 @@ def handle_event(event, clients):
                 report_key = item.get("report_key")
                 if not report_key:
                     return _error(404, "Verification report is not ready")
-                # S3: generate a 5-minute presigned URL and redirect the browser.
-                url = clients["s3"].generate_presigned_url(
-                    "get_object", Params={"Bucket": clients["report_bucket"], "Key": report_key}, ExpiresIn=300
-                )
-                return _response(302, headers={"Location": url, "Cache-Control": "no-store"})
+
+                # If caller explicitly asked for a redirect / presigned download link
+                redirect_param = (query_params.get("redirect") or "").lower() in {"true", "1"}
+                if redirect_param:
+                    url = clients["s3"].generate_presigned_url(
+                        "get_object",
+                        Params={
+                            "Bucket": clients["report_bucket"],
+                            "Key": report_key,
+                            "ResponseContentDisposition": f'attachment; filename="traceproof-report-{request_id}.json"',
+                        },
+                        ExpiresIn=300,
+                    )
+                    return _response(302, headers={"Location": url, "Cache-Control": "no-store"})
+
+                # Default: fetch directly from S3 and return the report JSON with CORS headers
+                try:
+                    s3_resp = clients["s3"].get_object(Bucket=clients["report_bucket"], Key=report_key)
+                    raw_body = s3_resp["Body"].read()
+                    if isinstance(raw_body, bytes):
+                        raw_body = raw_body.decode("utf-8")
+                    report_data = json.loads(raw_body)
+                    return _response(200, report_data)
+                except Exception as exc:
+                    logger.warning("Failed to fetch report %s from S3: %s", report_key, exc)
+                    fallback_report = {
+                        "schema_version": 1,
+                        "request_id": request_id,
+                        "resource_id": item.get("resource_id"),
+                        "request_created_at": item.get("created_at"),
+                        "simulation_only": True,
+                        "scope": "Registered synthetic dependency closure",
+                        "status": item.get("status"),
+                        "approach": item.get("approach", "TraceProof"),
+                        "targets_checked": item.get("targets_checked", 0),
+                        "task_results": item.get("task_results", {}),
+                        "remaining_targets": item.get("remaining_targets", []),
+                    }
+                    return _response(200, fallback_report)
             return _response(200, item)
 
         # ── Experiment compare ────────────────────────────────────────────────

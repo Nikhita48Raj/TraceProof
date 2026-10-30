@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  body { background: #f8fafc; padding: 36px 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 1280px; height: 720px; }
+  .title-bar { width: 100%; max-width: 1200px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
+  .title-bar h1 { font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; }
+  .title-bar span { font-size: 13px; color: #64748b; font-weight: 500; }
+  .canvas { width: 100%; max-width: 1200px; height: 580px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 14px; position: relative; padding: 24px; box-shadow: 0 4px 16px -2px rgba(0,0,0,0.06); }
+  
+  .boundary-aws { position: absolute; left: 240px; top: 20px; right: 24px; bottom: 20px; border: 2px dashed #94a3b8; border-radius: 12px; background: #f8fafc; padding: 16px; }
+  .boundary-label { position: absolute; top: 10px; right: 20px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; background: #e2e8f0; padding: 4px 10px; border-radius: 6px; }
+  
+  .box { position: absolute; border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; justify-content: center; }
+  .box .name { font-weight: 700; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .box .sub { font-size: 11px; opacity: 0.85; line-height: 1.35; }
+  
+  .user-box { left: 40px; top: 210px; width: 165px; height: 140px; background: #eff6ff; border: 1.5px solid #93c5fd; color: #1e3a8a; }
+  .apigw-box { left: 270px; top: 210px; width: 175px; height: 140px; background: #faf5ff; border: 1.5px solid #d8b4fe; color: #581c87; }
+  .api-lambda-box { left: 485px; top: 120px; width: 210px; height: 130px; background: #fff7ed; border: 1.5px solid #fdba74; color: #9a3412; }
+  .sqs-box { left: 485px; top: 320px; width: 210px; height: 130px; background: #fdf2f8; border: 1.5px solid #f472b6; color: #831843; }
+  .worker-lambda-box { left: 740px; top: 320px; width: 210px; height: 130px; background: #fff7ed; border: 1.5px solid #fdba74; color: #9a3412; }
+  .dynamo-box { left: 990px; top: 100px; width: 180px; height: 155px; background: #f0fdf4; border: 1.5px solid #86efac; color: #14532d; }
+  .s3-box { left: 990px; top: 300px; width: 180px; height: 155px; background: #f0fdfa; border: 1.5px solid #5eead4; color: #134e4a; }
+  .cw-box { left: 740px; top: 120px; width: 210px; height: 130px; background: #f1f5f9; border: 1.5px solid #cbd5e1; color: #1e293b; }
+  .iam-box { left: 485px; top: 485px; width: 465px; height: 50px; background: #e0e7ff; border: 1.5px solid #a5b4fc; color: #312e81; flex-direction: row; align-items: center; justify-content: space-between; }
+  
+  .badge { display: inline-block; padding: 2px 6px; font-size: 10px; font-weight: 700; border-radius: 4px; text-transform: uppercase; margin-bottom: 4px; }
+  
+  svg.conn { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+  .arrow { stroke: #64748b; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+  .arrow-accent { stroke: #2563eb; stroke-width: 2.2; fill: none; marker-end: url(#arrowhead-blue); }
+  .label-text { font-size: 10.5px; font-weight: 600; fill: #475569; }
+</style>
+</head>
+<body>
+  <div class="title-bar">
+    <h1>TraceProof: Serverless System Architecture</h1>
+    <span>AWS Region: ap-south-1 (Asia Pacific - Mumbai) • Event-Driven Serverless Framework</span>
+  </div>
+  <div class="canvas">
+    <div class="boundary-aws">
+      <div class="boundary-label">AWS Managed Serverless Boundary (ap-south-1)</div>
+    </div>
+    
+    <div class="box user-box">
+      <span class="badge" style="background:#bfdbfe;color:#1e40af;">Frontend Client</span>
+      <div class="name">User Browser</div>
+      <div class="sub">React 18 + Vite SPA<br>Tailwind CSS UI<br>Research Dashboard</div>
+    </div>
+    
+    <div class="box apigw-box">
+      <span class="badge" style="background:#f3e8ff;color:#6b21a8;">API Layer</span>
+      <div class="name">HTTP API Gateway</div>
+      <div class="sub">CORS &amp; Preflight<br>GET /resources<br>POST /deletion-requests<br>GET /report</div>
+    </div>
+    
+    <div class="box api-lambda-box">
+      <span class="badge" style="background:#ffedd5;color:#c2410c;">AWS Lambda</span>
+      <div class="name">ApiFunction (Python)</div>
+      <div class="sub">Request Validation<br>Enqueues Deletion to SQS<br>Direct S3 Report Fetch<br>Experiment Persist &amp; Export</div>
+    </div>
+    
+    <div class="box sqs-box">
+      <span class="badge" style="background:#fce7f3;color:#9d174d;">Amazon SQS</span>
+      <div class="name">DeletionQueue + DLQ</div>
+      <div class="sub">Decoupled Buffer<br>Redrive: maxReceive=3<br>At-least-once Delivery<br>SQS Managed SSE</div>
+    </div>
+    
+    <div class="box worker-lambda-box">
+      <span class="badge" style="background:#ffedd5;color:#c2410c;">AWS Lambda</span>
+      <div class="name">WorkerFunction</div>
+      <div class="sub">Graph Traversal Engine<br>Synthetic Deletion Sim<br>Idempotent State Writes<br>Generates S3 JSON Report</div>
+    </div>
+    
+    <div class="box dynamo-box">
+      <span class="badge" style="background:#dcfce7;color:#166534;">Amazon DynamoDB</span>
+      <div class="name">State Storage</div>
+      <div class="sub"><b>ResourceTable:</b> graph closure<br><b>RequestTable:</b> audit status<br><b>ExperimentTable:</b> TTL=7d<br>Condition-protected writes</div>
+    </div>
+    
+    <div class="box s3-box">
+      <span class="badge" style="background:#ccfbf1;color:#115e59;">Amazon S3</span>
+      <div class="name">ReportBucket</div>
+      <div class="sub">Private SSE-AES256<br>Public Access Block<br>90-day Lifecycle Policy<br>reports/{req_id}.json</div>
+    </div>
+    
+    <div class="box cw-box">
+      <span class="badge" style="background:#e2e8f0;color:#334155;">Amazon CloudWatch</span>
+      <div class="name">Observability</div>
+      <div class="sub">7-Day Log Retention<br>Duration &amp; Error Metrics<br>Queue Depth Tracking<br>100% Invocations Audited</div>
+    </div>
+    
+    <div class="box iam-box">
+      <div style="font-weight:700;font-size:12.5px;">AWS IAM Least-Privilege Execution Roles</div>
+      <div style="font-size:11px;opacity:0.9;">ApiFunctionRole &amp; WorkerFunctionRole: No Wildcards (*) • Scoped ARNs • Zero DeleteItem</div>
+    </div>
+    
+    <svg class="conn">
+      <defs>
+        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#64748b" />
+        </marker>
+        <marker id="arrowhead-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#2563eb" />
+        </marker>
+      </defs>
+      
+      <!-- User to APIGW -->
+      <path d="M 205 280 L 270 280" class="arrow-accent" />
+      <text x="212" y="272" class="label-text">HTTPS / API</text>
+      
+      <!-- APIGW to ApiLambda -->
+      <path d="M 445 250 L 485 200" class="arrow" />
+      <text x="440" y="215" class="label-text">Invoke</text>
+      
+      <!-- ApiLambda to SQS -->
+      <path d="M 590 250 L 590 320" class="arrow" />
+      <text x="595" y="290" class="label-text">Enqueue Job</text>
+      
+      <!-- ApiLambda to DynamoDB -->
+      <path d="M 695 160 L 990 160" class="arrow" />
+      <text x="790" y="152" class="label-text">PutItem / Query / Seed</text>
+      
+      <!-- SQS to Worker -->
+      <path d="M 695 385 L 740 385" class="arrow-accent" />
+      <text x="698" y="378" class="label-text">Batch (1)</text>
+      
+      <!-- Worker to DynamoDB -->
+      <path d="M 845 320 L 845 220 L 990 220" class="arrow" />
+      <text x="852" y="245" class="label-text">UpdateItem (Condition)</text>
+      
+      <!-- Worker to S3 -->
+      <path d="M 950 385 L 990 385" class="arrow-accent" />
+      <text x="948" y="377" class="label-text">PutObject</text>
+      
+      <!-- ApiLambda to S3 -->
+      <path d="M 695 190 L 730 190 L 730 330 L 990 330" class="arrow" style="stroke-dasharray: 4,4;" />
+      <text x="736" y="315" class="label-text">GetObject (Report JSON)</text>
+    </svg>
+  </div>
+</body>
+</html>
